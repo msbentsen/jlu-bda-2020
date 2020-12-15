@@ -9,6 +9,10 @@ for(name in experiment_names) {
 }
 request_mat = matrix(request_ids,nrow=2)
 for(i in c(1:length(request_mat[1,]))) {
-  regions = deepblue_download_request_data(request_mat[2,i])
-  deepblue_export_tab(regions,file.name=request_mat[1,i])
+  filename = request_mat[1,i]
+  req_id = request_mat[2,i]
+  regions = deepblue_download_request_data(req_id)
+  deepblue_export_tab(regions,file.name=filename)
+  exp_id <- deepblue_name_to_id(filename,collection="experiments")
+  deepblue_export_meta_data(exp_id$id, file.name=filename)
 }
