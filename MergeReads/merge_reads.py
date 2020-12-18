@@ -1,3 +1,10 @@
+'''
+File for merging reverse/foward reads in ATAC-seq data
+
+by Kristina Müller (kmlr81)
+'''
+
+
 #import os
 
 #os.system("")
