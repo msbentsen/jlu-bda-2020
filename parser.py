@@ -72,9 +72,9 @@ def read_bigwig(file, d):
         for pos in d[key]:
             s = bw.intervals(key, pos[0], pos[1])
             if key in scores:
-                scores[key] = scores[key] + s
+                scores[key] = tuple(set(scores[key] + s))
             else:
-                scores[key] = s
+                scores[key] = tuple(set(s))
     return scores
 
 
