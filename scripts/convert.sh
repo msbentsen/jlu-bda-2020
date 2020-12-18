@@ -13,7 +13,11 @@ validate_file () {
 }
 
 validate_required() {
-	true
+	bedGraphToBigWig
+	if [ "$?" == "127" ]; then
+		echo "bedGraphToBigWig is not installed, abort"
+		exit 1
+	fi
 }
 
 convert_files() {
