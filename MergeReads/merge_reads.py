@@ -9,7 +9,25 @@ by Kristina Müller (kmlr81)
 
 #os.system("")
 
+
 def read_linkage_table():
+    file_dict = creat_file_dict()
+
+
+
+
+
+
+def creat_file_dict():
+    '''
+    Method reads in .csv linkage table file and creates a dictinary containg
+    only information regarding ATAC-seq files.
+
+    :return: file_dict is a dictionary of the following structure:
+             key = name of reference genome as string, value = another dictionary
+             of the following structure:
+                key = name of biosource, value = an array of tuples: (filename, file path)
+    '''
     import csv
 
 
@@ -35,20 +53,24 @@ def read_linkage_table():
             biosources.append(row["Biosource"])
 
 
-    for i in range(1,len(genomes)):
-        ref_genome = genomes[0]
-        ref_biosource = biosources[0]
-        tmp_files = []
-        tmp_dict_bs = {}
+    ref_genome = genomes[0]
+    ref_biosource = biosources[0]
+    tmp_files = []
+    tmp_dict_bs = {}
 
-        if ref_genome == genomes[i]:
-            if ref_biosource == biosources[i]:
-                tmp_files.append(files[i])
-            elif ref_biosource != biosources[i] or i == len(biosources)-1:
-                tmp_dict_bs[ref_biosource] = tmp_files
-                ref_biosource = biosources[i]
-                tmp_files.clear()
-        elif ref_genome != genomes[i] or i == len(genomes)-1:
+    for i in range(0,len(genomes)):
+        if ref_genome != genomes[i] or i == len(genomes)-1:
+            tmp_dict_bs[ref_biosource] = tmp_files
             file_dict[ref_genome] = tmp_dict_bs
             ref_genome = genomes[i]
             tmp_dict_bs.clear()
+        else:
+            if ref_biosource != biosources[i]:
+                tmp_dict_bs[ref_biosource] = tmp_files
+                ref_biosource = biosources[i]
+                tmp_files.clear()
+            else:
+                tmp_files.append(files[i])
+
+    return file_dict
+
