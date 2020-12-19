@@ -1,5 +1,5 @@
 '''
-File for merging reverse/foward reads in ATAC-seq data
+Methods for merging reverse/foward reads in ATAC-seq data
 
 by Kristina Müller (kmlr81)
 '''
@@ -10,7 +10,7 @@ by Kristina Müller (kmlr81)
 #os.system("")
 
 
-def read_linkage_table():
+def merge_files():
     file_dict = creat_file_dict()
 
 
@@ -20,24 +20,75 @@ def read_linkage_table():
 
 def creat_file_dict():
     '''
-    Method reads in .csv linkage table file and creates a dictinary containg
-    only information regarding ATAC-seq files.
+    Method creates a dictinary containg information regarding
+    forward/reverse read ATAC-seq files
+    files.
 
     :return: file_dict is a dictionary of the following structure:
              key = name of reference genome as string, value = another dictionary
              of the following structure:
                 key = name of biosource, value = an array of tuples: (filename, file path)
     '''
+
+    files, genomes, biosources = read_linkage_table()
+    file_dict = {}
+    ref_genome = genomes[0]
+    ref_biosource = biosources[0]
+    tmp_files = []
+    tmp_dict_bs = {}
+    genome_counter = 0
+
+    for j in range(0,len(genomes)):
+        if ref_genome == genomes[j]:
+            genome_counter += 1
+        else:
+            for i in range(j-genome_counter-1, j):
+                if ref_biosource == biosources[i]:
+                    tmp_files.append(files[i])
+                else:
+                    tmp_dict_bs[ref_biosource] = tmp_files
+                    ref_biosource = biosources[i]
+                    tmp_files = []
+                    tmp_files.append(files[i])
+                if i == j + genome_counter-1:
+                    tmp_dict_bs[ref_biosource] = tmp_files
+            file_dict[ref_genome] = tmp_dict_bs
+            ref_genome = genomes[j]
+            tmp_dict_bs = {}
+            genome_counter = 0
+        if j == len(genomes)-1:
+            for i in range(j-genome_counter-1, j):
+                if ref_biosource == biosources[i]:
+                    tmp_files.append(files[i])
+                else:
+                    tmp_dict_bs[ref_biosource] = tmp_files
+                    ref_biosource = biosources[i]
+                    tmp_files = []
+                    tmp_files.append(files[i])
+                if i == j + genome_counter-1:
+                    tmp_dict_bs[ref_biosource] = tmp_files
+            file_dict[ref_genome] = tmp_dict_bs
+
+    return file_dict
+
+
+
+def read_linkage_table():
+    '''
+    Method reads in .csv linkage table file and returns three lists with
+    information regarding reference genomes, bio-sources, file names and file
+    paths for ATAC-seq data only
+    :return: files is a list containing tuples of (file name, file path)
+             genomes is a list containing reference genomes
+             biosources is a list containing biosources from the linkage table
+    '''
     import csv
 
-
-    lt_path = "Daten/linkage_table.csv"
+    lt_path = "Data/linkage_table.csv"
     lt_rows = []
-    file_dict = {}
     files = []
     genomes = []
     biosources = []
-
 
     with open(lt_path) as linkage_table:
         lt_reader = csv.DictReader(linkage_table, delimiter= ',')
@@ -52,25 +103,19 @@ def creat_file_dict():
             genomes.append(row["Reference_Genome"])
             biosources.append(row["Biosource"])
 
+    return files, genomes, biosources
 
-    ref_genome = genomes[0]
-    ref_biosource = biosources[0]
-    tmp_files = []
-    tmp_dict_bs = {}
 
-    for i in range(0,len(genomes)):
-        if ref_genome != genomes[i] or i == len(genomes)-1:
-            tmp_dict_bs[ref_biosource] = tmp_files
-            file_dict[ref_genome] = tmp_dict_bs
-            ref_genome = genomes[i]
-            tmp_dict_bs.clear()
-        else:
-            if ref_biosource != biosources[i]:
-                tmp_dict_bs[ref_biosource] = tmp_files
-                ref_biosource = biosources[i]
-                tmp_files.clear()
-            else:
-                tmp_files.append(files[i])
 
-    return file_dict
+def get_mergable_files():
+    file_dict = creat_file_dict()
+    idxs = []
 
+    for genome in file_dict.keys():
+        for biosource in file_dict[genome].keys():
+            for i in range(1,len(file_dict[genome][biosource])):
+                if 'forward' not in file_dict[genome][biosource][i][0].lower():
+                    if 'reverse' not in file_dict[genome][biosource][i][0].lower():
+                        idxs.append(i)
+
+    return idxs
