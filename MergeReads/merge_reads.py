@@ -12,7 +12,7 @@ by Kristina Müller (kmlr81)
 
 def merge_files():
     file_dict = creat_file_dict()
-
+    pairs = find_pairs(file_dict)
 
 
 
@@ -24,10 +24,10 @@ def creat_file_dict():
     forward/reverse read ATAC-seq files
     files.
 
-    :return: file_dict is a dictionary of the following structure:
-             key = name of reference genome as string, value = another dictionary
-             of the following structure:
-                key = name of biosource, value = an array of tuples: (filename, file path)
+    :return: file_dict: A dictionary of the following structure:
+                        key = name of reference genome as string, value = another dictionary
+                        of the following structure:
+                        key = name of biosource, value = an array of tuples: (filename, file path)
     '''
 
     files, genomes, biosources = read_linkage_table()
@@ -77,10 +77,11 @@ def read_linkage_table():
     '''
     Method reads in .csv linkage table file and returns three lists with
     information regarding reference genomes, bio-sources, file names and file
-    paths for ATAC-seq data only
-    :return: files is a list containing tuples of (file name, file path)
-             genomes is a list containing reference genomes
-             biosources is a list containing biosources from the linkage table
+    paths for ATAC-seq files in need of merging only
+
+    :return: files: A list containing tuples of (file name, file path)
+             genomes: A list containing reference genomes
+             biosources: A list containing biosources from the linkage table
     '''
     import csv
 
@@ -105,4 +106,31 @@ def read_linkage_table():
             biosources.append(row["Biosource"])
 
     return files, genomes, biosources
+
+
+
+def find_pairs(file_dict):
+    '''
+    Method pairs files that need to be merged
+
+    :param file_dict: A dictionary as is returned by the method
+                      create_file_dict()
+    :return: paris: A list of touples containing the filepaths to the two
+                    files that need to be merged with each other
+    '''
+    pairs = []
+
+    for genome in file_dict.keys():
+        for biosource in file_dict[genome].keys():
+            for i in range(0,len(file_dict[genome][biosource])):
+                filename = file_dict[genome][biosource][i][0]
+                project_id = filename.split(".")[0]
+                for j in range(i,len(file_dict[genome][biosource])):
+                    if project_id in file_dict[genome][biosource][j][0] and j\
+                            != i:
+                        pair = (file_dict[genome][biosource][i][1],file_dict[
+                            genome][biosource][j][1])
+                        pairs.append(pair)
+
+    return pairs
 
