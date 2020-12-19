@@ -42,7 +42,7 @@ def creat_file_dict():
         if ref_genome == genomes[j]:
             genome_counter += 1
         else:
-            for i in range(j-genome_counter-1, j):
+            for i in range(j-(genome_counter-1), j+1):
                 if ref_biosource == biosources[i]:
                     tmp_files.append(files[i])
                 else:
@@ -50,14 +50,14 @@ def creat_file_dict():
                     ref_biosource = biosources[i]
                     tmp_files = []
                     tmp_files.append(files[i])
-                if i == j + genome_counter-1:
+                if i == j:
                     tmp_dict_bs[ref_biosource] = tmp_files
             file_dict[ref_genome] = tmp_dict_bs
             ref_genome = genomes[j]
             tmp_dict_bs = {}
             genome_counter = 0
         if j == len(genomes)-1:
-            for i in range(j-genome_counter-1, j):
+            for i in range(j-(genome_counter-1), j+1):
                 if ref_biosource == biosources[i]:
                     tmp_files.append(files[i])
                 else:
@@ -65,7 +65,7 @@ def creat_file_dict():
                     ref_biosource = biosources[i]
                     tmp_files = []
                     tmp_files.append(files[i])
-                if i == j + genome_counter-1:
+                if i == j:
                     tmp_dict_bs[ref_biosource] = tmp_files
             file_dict[ref_genome] = tmp_dict_bs
 
@@ -98,24 +98,11 @@ def read_linkage_table():
 
 
     for row in lt_rows:
-        if row["Sequencing_Type"] == "ATAC-seq":
+        if row["Sequencing_Type"] == "ATAC-seq" and ("forward" in row[
+            "Filename"].lower() or "reverse" in row["Filename"].lower()):
             files.append((row["Filename"], row["File_Path"]))
             genomes.append(row["Reference_Genome"])
             biosources.append(row["Biosource"])
 
     return files, genomes, biosources
 
-
-
-def get_mergable_files():
-    file_dict = creat_file_dict()
-    idxs = []
-
-    for genome in file_dict.keys():
-        for biosource in file_dict[genome].keys():
-            for i in range(1,len(file_dict[genome][biosource])):
-                if 'forward' not in file_dict[genome][biosource][i][0].lower():
-                    if 'reverse' not in file_dict[genome][biosource][i][0].lower():
-                        idxs.append(i)
-
-    return idxs
