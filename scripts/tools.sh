@@ -3,7 +3,7 @@
 #
 #  FILE:  tools.sh
 #
-#  USAGE:  tools.sh [tools directory] [list of tools]
+#  USAGE:  tools.sh [data directory path] [list of tools]
 #
 #  DESCRIPTION:  Check for the availability of ucsc tools. Additional arguments
 #  my be given to check for additional tools. If a tool is not found the script
