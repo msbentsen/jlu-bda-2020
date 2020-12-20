@@ -13,9 +13,7 @@ by Kristina Müller (kmlr81)
 def merge_files():
     file_dict = creat_file_dict()
     pairs = find_pairs(file_dict)
-
-
-
+    merged_file_paths, bedgraph = make_merged_file_paths(pairs)
 
 
 def creat_file_dict():
@@ -134,3 +132,39 @@ def find_pairs(file_dict):
 
     return pairs
 
+
+
+def make_merged_file_paths(pairs):
+    '''
+    Method creates filenames and filepaths for the new files after merging
+
+    :param pairs: A list of tuples with (file path forward read, filepath
+                  reverse read) of filepairs to be merged
+    :return: merged_file_paths: A list of filepaths for new files after
+             mergeing
+             bedgraph: A list of indexes for the pairs list, one index per
+                       files in pairs list that are bedgraph format and need
+                       to be converted to bw format before merging
+    '''
+    merged_file_paths = []
+    bedgraph = []
+
+    for i in range(0,len(pairs)):
+        file_path_split = pairs[i][0].split("/")
+        filename_split = file_path_split[-1].split("_")
+        filename_part_one = filename_split[0]
+        file_ending = filename_split[-1].split(".")[-1]
+        merged_filename = filename_part_one + "_merged." + file_ending
+        merged_file_path = file_path_split[0]
+
+        for j in range(1,len(file_path_split)-1):
+           merged_file_path += "/" + file_path_split[j]
+
+        merged_file_path += "/" + merged_filename
+        merged_file_paths.append(merged_file_path)
+
+        if file_ending.lower() != "bw":
+            if file_ending.lower() == "bedgraph":
+                bedgraph.append(i)
+
+    return merged_file_paths, bedgraph
