@@ -5,7 +5,7 @@ by Kristina Müller (kmlr81)
 '''
 
 
-#import os
+import os
 
 #os.system("")
 
@@ -13,7 +13,8 @@ by Kristina Müller (kmlr81)
 def merge_files():
     file_dict = creat_file_dict()
     pairs = find_pairs(file_dict)
-    merged_file_paths, bedgraph = make_merged_file_paths(pairs)
+    convert_to_bigWig(pairs)
+    merged_file_paths = make_merged_file_paths(pairs)
 
 
 def creat_file_dict():
@@ -142,29 +143,91 @@ def make_merged_file_paths(pairs):
                   reverse read) of filepairs to be merged
     :return: merged_file_paths: A list of filepaths for new files after
              mergeing
-             bedgraph: A list of indexes for the pairs list, one index per
-                       files in pairs list that are bedgraph format and need
-                       to be converted to bw format before merging
     '''
     merged_file_paths = []
-    bedgraph = []
 
     for i in range(0,len(pairs)):
-        file_path_split = pairs[i][0].split("/")
-        filename_split = file_path_split[-1].split("_")
-        filename_part_one = filename_split[0]
-        file_ending = filename_split[-1].split(".")[-1]
-        merged_filename = filename_part_one + "_merged." + file_ending
-        merged_file_path = file_path_split[0]
-
-        for j in range(1,len(file_path_split)-1):
-           merged_file_path += "/" + file_path_split[j]
-
-        merged_file_path += "/" + merged_filename
+        file_path_split = pairs[i][0].rsplit("/", maxsplit=1)
+        filename_split = file_path_split[1].split("_")
+        file_ending = filename_split[1].split(".")[-1]
+        merged_filename = filename_split[0] + "_merged." + file_ending
+        merged_file_path = file_path_split[0] + "/" + merged_filename
         merged_file_paths.append(merged_file_path)
 
-        if file_ending.lower() != "bw":
-            if file_ending.lower() == "bedgraph":
-                bedgraph.append(i)
+    return merged_file_paths
 
-    return merged_file_paths, bedgraph
+
+def get_bedgraph_idxs(pairs):
+    '''
+    Method searches list pairs for files with .bedGraph format and saves
+    indexes of said files
+
+    :param pairs: List of tuples containing filepaths to forward and reverse
+                  files that need to be merged
+    :return: bedgraphs: List of tuples containing indexes of files of type
+             .bedGraph that need to be converted to bigWig
+    '''
+    bedgraphs = []
+
+    for i in range(0,len(pairs)):
+        file_ending_1 = pairs[i][0].split(".")[-1]
+        file_ending_2 = pairs[i][1].split(".")[-1]
+
+        if file_ending_1.lower() == 'bedgraph':
+            bedgraphs.append((i,0))
+
+        if file_ending_2.lower() == 'bedgraph':
+            bedgraphs.append((i,1))
+
+    return bedgraphs
+
+def make_bw_file_paths(bedgraphs, pairs):
+    '''
+    Method makes file paths for files after conversion to bigWig format.
+
+    :param bedgraphs: List of tuples with indexes of .bedGraph files in pairs
+                      list
+    :param pairs: List of tuples with patsh to files that need to be merged
+    :return: List of paths to converted files with bigWig format
+    '''
+    file_paths_bw = []
+
+    for bedgraph in bedgraphs:
+        file_path_split = pairs[bedgraph[0]][bedgraph[1]].rsplit("/",
+                                                                 maxsplit=1)
+        filename_split = file_path_split[1].rsplit(".", maxsplit=1)
+        filename_bw = filename_split[0] + ".bw"
+        file_path_bw = file_path_split[0] + "/" + filename_bw
+        file_paths_bw.append(file_path_bw)
+
+    return file_paths_bw
+
+
+def make_commands_bw(pairs, file_paths_bw):
+    chrom_sizes_path = "Data/hg19/hg19.chrom.sizes "
+    bedgraph_to_bw = "./Data/tools/bedGraphToBigWig "
+    commands_first_half = []
+    commands = []
+
+    for pair in pairs:
+        for i in range(0,2):
+            command_first_half = bedgraph_to_bw + pair[i] + " " + \
+                                chrom_sizes_path
+            commands_first_half.append(command_first_half)
+
+    for j in range(0,len(file_paths_bw)):
+        command = commands_first_half[j] + file_paths_bw[j]
+        commands.append(command)
+
+    return commands
+
+
+def convert_to_bigWig(pairs):
+    bedgraphs = get_bedgraph_idxs(pairs)
+    file_paths_bw = make_bw_file_paths(bedgraphs,pairs)
+    commands = make_commands_bw(pairs,file_paths_bw)
+
+    for command in commands:
+        os.system(command)
+
+
