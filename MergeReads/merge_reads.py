@@ -7,16 +7,18 @@ by Kristina Müller (kmlr81)
 import os
 
 
-# os.system("")
-
-
 def merge_files():
     file_dict = creat_file_dict()
     pairs = find_pairs(file_dict)
     bedgraphs = get_bedgraph_idxs(pairs)
-    bw_file_paths = make_bw_file_paths(bedgraphs, pairs)
+    merged_file_paths = make_merged_file_paths(pairs)
+
     if len(bedgraphs) > 0:
-        convert_to_bigwig(pairs, bw_file_paths)
+        bw_file_paths = make_bw_file_paths(pairs=pairs, bedgraphs=bedgraphs)
+        convert_to_bigwig(bw_file_paths, pairs=pairs)
+    else:
+        bw_file_paths = make_bw_file_paths(merged_file_paths=merged_file_paths)
+        convert_to_bigwig(bw_file_paths, merged_file_paths=merged_file_paths)
 
 
 def creat_file_dict():
@@ -98,7 +100,7 @@ def read_linkage_table():
 
     for row in lt_rows:
         if row["Sequencing_Type"] == "ATAC-seq" and ("forward" in row[
-            "Filename"].lower() or "reverse" in row["Filename"].lower()):
+                "Filename"].lower() or "reverse" in row["Filename"].lower()):
             files.append((row["Filename"], row["File_Path"]))
             genomes.append(row["Reference_Genome"])
             biosources.append(row["Biosource"])
@@ -122,25 +124,36 @@ def find_pairs(file_dict):
             for i in range(0, len(file_dict[genome][biosource])):
                 filename = file_dict[genome][biosource][i][0]
                 project_id = filename.split(".")[0]
+                single_chrom = "chr" in filename
+                chrom = ""
+                if single_chrom:
+                    chrom += filename.split(".")[-2]
                 for j in range(i, len(file_dict[genome][biosource])):
                     if project_id in file_dict[genome][biosource][j][0] and j \
                             != i:
-                        pair = (file_dict[genome][biosource][i][1], file_dict[
-                            genome][biosource][j][1])
-                        pairs.append(pair)
+                        if single_chrom:
+                            if chrom in file_dict[genome][biosource][j][0]:
+                                pair = (
+                                    file_dict[genome][biosource][i][1],
+                                    file_dict[genome][biosource][j][1])
+                                pairs.append(pair)
+                        else:
+                            pair = (file_dict[genome][biosource][i][1],
+                                    file_dict[genome][biosource][j][1])
+                            pairs.append(pair)
 
     return pairs
 
 
 def make_merged_file_paths(pairs):
-    '''
+    """
     Method creates filenames and filepaths for the new files after merging
 
     :param pairs: A list of tuples with (file path forward read, filepath
                   reverse read) of filepairs to be merged
     :return: merged_file_paths: A list of filepaths for new files after
              mergeing
-    '''
+    """
     merged_file_paths = []
 
     for i in range(0, len(pairs)):
@@ -154,9 +167,12 @@ def make_merged_file_paths(pairs):
     return merged_file_paths
 
 
-def make_merge_commands(pairs, bw_file_pahts):
+def make_merge_commands(pairs, bw_file_paths):
     """
-    Method creates commands needed for merging bigWig file pairs
+    Method creates commands needed for merging bigWig file pairs.
+
+    :param bw_file_paths: List of paths to files with bigWig format in need
+                          of merging
     :param pairs: List of tuples containing paths to file pairs in need of
                   merging
     :return: commands: List of commands to be executed
@@ -166,8 +182,8 @@ def make_merge_commands(pairs, bw_file_pahts):
     commands = []
     idx = 0
 
-    for i in range(0, len(bw_file_pahts)-1,2):
-        command = bigwig_merge + bw_file_pahts[i] + " " + bw_file_pahts[i+1] + \
+    for i in range(0, len(bw_file_paths)-1, 2):
+        command = bigwig_merge + bw_file_paths[i] + " " + bw_file_paths[i+1] + \
                   " " + merged_file_paths[idx]
         commands.append(command)
         idx += 1
@@ -175,9 +191,11 @@ def make_merge_commands(pairs, bw_file_pahts):
     return commands
 
 
-def merge_pairs(pairs,bw_file_paths):
+def merge_pairs(pairs, bw_file_paths):
     """
-    Method executes merge commands for all bigWig file pairs in need of merging
+    Method executes merge commands for all bigWig file pairs in need of merging.
+
+    :param bw_file_paths: List of paths to bigWig files in need of merging
     :param pairs: List of tuples containing paths to file pairs in need of
                   merging
     """
@@ -214,67 +232,98 @@ def get_bedgraph_idxs(pairs):
     return bedgraphs
 
 
-def make_bw_file_paths(bedgraphs, pairs):
+def make_bw_file_paths(pairs=None, bedgraphs=None, merged_file_paths=None):
     """
-    Method makes file paths for files after conversion to bigWig format.
+    Method makes paths for bigWig files after conversion.
 
-    :param bedgraphs: List of tuples with indexes of .bedGraph files in pairs
-                      list
-    :param pairs: List of tuples with patsh to files that need to be merged
-    :return: List of paths to converted files with bigWig format
+    :param pairs: List of tuples containing filepaths to forward and reverse
+                  files that need to be merged
+    :param bedgraphs: List of tuples containing indexes of files of type
+                      bedGraph that need to be converted to bigWig
+    :param merged_file_paths: List of paths to bedGraph files after merging
+                              forward/reverse files
+    :return: file_paths_bw: List of paths to bigWig files after conversion
     """
     file_paths_bw = []
 
-    for bedgraph in bedgraphs:
-        file_path_split = pairs[bedgraph[0]][bedgraph[1]].rsplit("/",
-                                                                 maxsplit=1)
-        filename_split = file_path_split[1].rsplit(".", maxsplit=1)
-        filename_bw = filename_split[0] + ".bw"
-        file_path_bw = file_path_split[0] + "/" + filename_bw
-        file_paths_bw.append(file_path_bw)
+    if merged_file_paths is not None and bedgraphs is None and pairs is None:
+        for merged_file_path in merged_file_paths:
+            file_path_split = merged_file_path.rsplit(".", maxsplit=1)
+            file_path_bw = file_path_split[0] + ".bw"
+            file_paths_bw.append(file_path_bw)
+    elif bedgraphs is not None and pairs is not None and merged_file_paths is\
+            None:
+        for bedgraph in bedgraphs:
+            file_path_split = pairs[bedgraph[0]][bedgraph[1]].rsplit(".",
+                                                                     maxsplit=1)
+            file_path_bw = file_path_split[0] + ".bw"
+            file_paths_bw.append(file_path_bw)
 
     return file_paths_bw
 
 
-def make_bw_commands(pairs, bw_file_paths):
+def make_bw_commands(bw_file_paths, pairs=None, merged_file_paths=None):
     """
-    Method creates command line commands for converting bedGraph files to
+    Method creates command line prompts for converting bedGraph files to
     bigWig via pre-installed tool.
 
+    :param bw_file_paths: List of paths to bigWig files after conversion
     :param pairs: List of tuples containing paths to files that need to be
                   merged
-    :param bw_file_paths: List of paths to bigWig files after conversion
+    :param merged_file_paths: List of paths to bedGraph files after merging
+                              forward/reverse reads
     :return: commands: List of commands to be executed
     """
-    chrom_sizes_path = "Data/hg19/hg19.chrom.sizes "
     bedgraph_to_bw = "./Data/tools/bedGraphToBigWig "
-    commands_first_half = []
+    chrom_sizes_path = "Data/hg19/hg19.chrom.sizes "
     commands = []
 
-    for pair in pairs:
-        for i in range(0, 2):
-            command_first_half = bedgraph_to_bw + pair[i] + " " + \
-                                 chrom_sizes_path
-            commands_first_half.append(command_first_half)
-
-    for j in range(0, len(bw_file_paths)):
-        command = commands_first_half[j] + bw_file_paths[j]
-        commands.append(command)
+    if pairs is not None:
+        commands_first_half = []
+        for pair in pairs:
+            for i in range(0, 2):
+                command_first_half = bedgraph_to_bw + pair[i] + " " + \
+                                     chrom_sizes_path
+                commands_first_half.append(command_first_half)
+        for j in range(0, len(bw_file_paths)):
+            command = commands_first_half[j] + bw_file_paths[j]
+            commands.append(command)
+    elif merged_file_paths is not None:
+        for i in range(0, len(merged_file_paths)):
+            command = bedgraph_to_bw + merged_file_paths[i] + \
+                      " " + chrom_sizes_path + bw_file_paths[i]
+            commands.append(command)
 
     return commands
 
 
-def convert_to_bigwig(pairs, bw_file_paths):
+def convert_to_bigwig(bw_file_paths, pairs=None, merged_file_paths=None):
     """
-        Method converts all bedGraph files that need to be merged into bigWig files.
+    Method converts bedGraph files to bigWig files.
 
+    :param bw_file_paths: List of paths to bigWig files after conversion
     :param pairs: List of tuples containing paths to files that need to be
                   merged
-    :param bedgraphs: List of tuples of indexes for bedGraph files in pairs
-                      list
+    :param merged_file_paths: List of paths to bedGraph files after merging
+                              forward/reverse reads
     """
-
-    commands = make_bw_commands(pairs, bw_file_paths)
+    if pairs is not None and merged_file_paths is None:
+        commands = make_bw_commands(bw_file_paths, pairs=pairs)
+    else:
+        commands = make_bw_commands(bw_file_paths,
+                                    merged_file_paths=merged_file_paths)
 
     for command in commands:
         os.system(command)
+
+
+def delete_old_files(pairs):
+    """
+    Method deletes forward/reverse file pairs after merging
+    :param pairs: List of tuples containing paths to files that need to be
+                  merged
+    """
+    command = "rm "
+    for pair in pairs:
+        for i in range(0, 2):
+            os.system(command + pair[i])
