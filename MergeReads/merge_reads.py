@@ -16,9 +16,11 @@ def merge_files():
     if len(bedgraphs) > 0:
         bw_file_paths = make_bw_file_paths(pairs=pairs, bedgraphs=bedgraphs)
         convert_to_bigwig(bw_file_paths, pairs=pairs)
+        delete_old_files(bw_file_paths, pairs=pairs)
     else:
         bw_file_paths = make_bw_file_paths(merged_file_paths=merged_file_paths)
         convert_to_bigwig(bw_file_paths, merged_file_paths=merged_file_paths)
+        delete_old_files(bw_file_paths)
 
 
 def creat_file_dict():
@@ -317,19 +319,21 @@ def convert_to_bigwig(bw_file_paths, pairs=None, merged_file_paths=None):
         os.system(command)
 
 
-def delete_old_files(pairs, bw_file_paths):
+def delete_old_files(file_paths, pairs=None):
     """
     Method deletes forward/reverse file pairs after merging.
 
-    :param bw_file_paths: List of paths to files that were converted to bigWig
+    :param file_paths: List of paths to bedGraph files that were converted to
+                       bigWig and are no longer needed
     :param pairs: List of tuples containing paths to files that need to be
                   merged
     """
     command = "rm "
 
-    for pair in pairs:
-        for i in range(0, 2):
-            os.system(command + pair[i])
+    if pairs is not None:
+        for pair in pairs:
+            for i in range(0, 2):
+                os.system(command + pair[i])
 
-    for file_path in bw_file_paths:
+    for file_path in file_paths:
         os.system(command + file_path)
