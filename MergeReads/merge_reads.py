@@ -317,13 +317,19 @@ def convert_to_bigwig(bw_file_paths, pairs=None, merged_file_paths=None):
         os.system(command)
 
 
-def delete_old_files(pairs):
+def delete_old_files(pairs, bw_file_paths):
     """
-    Method deletes forward/reverse file pairs after merging
+    Method deletes forward/reverse file pairs after merging.
+
+    :param bw_file_paths: List of paths to files that were converted to bigWig
     :param pairs: List of tuples containing paths to files that need to be
                   merged
     """
     command = "rm "
+
     for pair in pairs:
         for i in range(0, 2):
             os.system(command + pair[i])
+
+    for file_path in bw_file_paths:
+        os.system(command + file_path)
