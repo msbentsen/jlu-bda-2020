@@ -1,7 +1,7 @@
 exportFromCsv <- function(file) {
 
   data <- read.csv(file=file,header=TRUE)
-  chrs <- c(1:22,c("X","Y"))
+  chrs <- c(1:22,"X","Y")
   
   # for each experiment and each chromosome of that experiment, download
   
