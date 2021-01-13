@@ -1,11 +1,12 @@
 # Options (could turn this into a function)
-similar_biosources <- FALSE
+similar_biosources <- TRUE
 chip_signals <- FALSE
 if(chip_signals) {
   chip_type <- c("signal","peaks")
 } else {
-  chip_type <- "peaks"
+  chip_type <- "peaks" # default
 }
+genomes <- c("hg19","GRCh38","hs37d5") # homo sapiens only
 
 collect_metadata <- function(e,metadata) {
   filename <- metadata$name
@@ -31,15 +32,15 @@ collect_metadata <- function(e,metadata) {
 
 # ChIP Data Type "only peaks for this workflow, but make it variable" (custom marks)
 # ATAC-Seq: signals (mark: DNA Accessibility)
-# DNAse-Seq: signals and peaks (marks: DNA Accessibility, DNAseI) (large number of mm9 (Mus musculus) experiments)
+# DNAse-Seq: signals and peaks (marks: DNA Accessibility, DNAseI)
 
 # 1. Step: Retrieve ATAC+DNAse metadata, extract list of biosources
 
 # filter epigenetic marks, types...
-marks <- deepblue_list_epigenetic_marks(extra_metadata = {"category":"Transcription Factor Binding Sites"})
+chip_marks <- deepblue_list_epigenetic_marks(extra_metadata = {"category":"Transcription Factor Binding Sites"})
 # list required experiments
-atac <- deepblue_list_experiments(technique = "ATAC-Seq", type=c("signal"), epigenetic_mark = "DNA Accessibility")
-dnase <- deepblue_list_experiments(technique = "DNAse-Seq", epigenetic_mark=c("DNA Accessibility","DNaseI"))
+atac <- deepblue_list_experiments(genome=genomes, technique="ATAC-Seq", type=("signal"), epigenetic_mark="DNA Accessibility")
+dnase <- deepblue_list_experiments(genome=genomes, technique="DNAse-Seq", epigenetic_mark=c("DNA Accessibility","DNaseI"))
 access_experiments <- rbind(atac,dnase)
 atac_csv <- data.frame(stringsAsFactors = FALSE)
 for(e in access_experiments$id) {
@@ -52,7 +53,7 @@ atac_biosources <- unique(atac_csv$biosource)
 
 # 2. Step: Retrieve ChiP-Seq metadata (peaks only), add to data frame if biosources match
 
-chips <- deepblue_list_experiments(technique = "ChiP-Seq", type=chip_type, epigenetic_mark = marks)
+chips <- deepblue_list_experiments(genome=genomes,technique="ChiP-Seq", type=chip_type, epigenetic_mark=chip_marks)
 chip_csv <- data.frame(stringsAsFactors = FALSE)
 for(ce in chips$id) {
   metadata <- deepblue_info(ce)
@@ -62,10 +63,13 @@ for(ce in chips$id) {
     chip_csv <- rbind(chip_csv,collect_metadata(ce,metadata))
   } else {
     if(similar_biosources) {
+      print(biosource)
       similars <- deepblue_list_similar_biosources(biosource)
+      print(similars)
       for(s in similars$name) {
         if(s %in% atac_biosources) {
           metadata$sample_info$biosource_name <- s
+          print(s)
           chip_csv <- rbind(chip_csv,collect_metadata(ce,metadata))
           break
         }
