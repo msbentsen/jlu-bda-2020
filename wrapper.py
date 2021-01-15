@@ -18,3 +18,4 @@ def pull_data(source_path, dest_path, csv_path, *args):
     rc = subprocess.call(
         ["./scripts/sort.sh", source_path, dest_path, csv_path])
     if rc != 0:
+        print("error")
