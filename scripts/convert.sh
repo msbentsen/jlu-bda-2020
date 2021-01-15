@@ -12,19 +12,10 @@ validate_file () {
 	true
 }
 
-validate_required() {
-	bedGraphToBigWig
-	if [ "$?" == "127" ]; then
-		echo "bedGraphToBigWig is not installed, abort"
-		exit 1
-	fi
-}
 
 convert_files() {
 	true
 }
-
-validate_required
 
 while IFS="," read -r genome source seq_type tf data_type file_type file_path remaining
 do
