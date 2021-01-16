@@ -1,5 +1,5 @@
 """
-Methods for merging reverse/foward reads in ATAC-seq data
+Methods for merging reverse/forward reads in ATAC-seq data
 
 by Kristina Müller (kmlr81)
 """
@@ -88,7 +88,7 @@ def read_linkage_table():
     """
     import csv
 
-    lt_path = "Data/linkage_table.csv"
+    lt_path = "linkage_table.csv"
     lt_rows = []
     files = []
     genomes = []
@@ -101,11 +101,11 @@ def read_linkage_table():
             lt_rows.append(row)
 
     for row in lt_rows:
-        if row["Sequencing_Type"] == "ATAC-seq" and ("forward" in row[
-                "Filename"].lower() or "reverse" in row["Filename"].lower()):
-            files.append((row["Filename"], row["File_Path"]))
-            genomes.append(row["Reference_Genome"])
-            biosources.append(row["Biosource"])
+        if row["technique"] == "ATAC-seq" and ("forward" in row[
+                "filename"].lower() or "reverse" in row["filename"].lower()):
+            files.append((row["filename"], row["file_path"]))
+            genomes.append(row["genome"])
+            biosources.append(row["biosource"])
 
     return files, genomes, biosources
 
@@ -149,12 +149,12 @@ def find_pairs(file_dict):
 
 def make_merged_file_paths(pairs):
     """
-    Method creates filenames and filepaths for the new files after merging
+    Method creates filenames and file paths for the new files after merging
 
     :param pairs: A list of tuples with (file path forward read, filepath
-                  reverse read) of filepairs to be merged
-    :return: merged_file_paths: A list of filepaths for new files after
-             mergeing
+                  reverse read) of file pairs to be merged
+    :return: merged_file_paths: A list of file paths for new files after
+             merging
     """
     merged_file_paths = []
 
@@ -177,16 +177,17 @@ def make_merge_commands(pairs, bw_file_paths):
                           of merging
     :param pairs: List of tuples containing paths to file pairs in need of
                   merging
-    :return: commands: List of commands to be executed
+    :return: commands: List of commands to be executed for merging
     """
-    bigwig_merge = "./Data/tools/bigWigMerge "
+    bigwig_merge = "./tools/bigWigMerge "
     merged_file_paths = make_merged_file_paths(pairs)
     commands = []
     idx = 0
 
     for i in range(0, len(bw_file_paths)-1, 2):
-        command = bigwig_merge + bw_file_paths[i] + " " + bw_file_paths[i+1] + \
-                  " " + merged_file_paths[idx]
+        command = bigwig_merge + "\"" + bw_file_paths[i] + "\"" + " " + "\"" \
+                  + bw_file_paths[i+1] + "\"" + " " + "\"" \
+                  + merged_file_paths[idx] + "\""
         commands.append(command)
         idx += 1
 
@@ -214,7 +215,7 @@ def get_bedgraph_idxs(pairs):
     Method searches list pairs for files with .bedGraph format and saves
     indexes of said files
 
-    :param pairs: List of tuples containing filepaths to forward and reverse
+    :param pairs: List of tuples containing file paths to forward and reverse
                   files that need to be merged
     :return: bedgraphs: List of tuples containing indexes of files of type
              .bedGraph that need to be converted to bigWig
@@ -237,8 +238,12 @@ def get_bedgraph_idxs(pairs):
 def make_bw_file_paths(pairs=None, bedgraphs=None, merged_file_paths=None):
     """
     Method makes paths for bigWig files after conversion.
+    If pairs and bedgraphs is given as arguments, then the method returns
+    file paths for bigWig files after conversion of files before being merged.
+    If merged_file_paths is given as an argument, the method returns paths for
+    bigWig files after conversion for already merged files.
 
-    :param pairs: List of tuples containing filepaths to forward and reverse
+    :param pairs: List of tuples containing file paths to forward and reverse
                   files that need to be merged
     :param bedgraphs: List of tuples containing indexes of files of type
                       bedGraph that need to be converted to bigWig
@@ -268,6 +273,10 @@ def make_bw_commands(bw_file_paths, pairs=None, merged_file_paths=None):
     """
     Method creates command line prompts for converting bedGraph files to
     bigWig via pre-installed tool.
+    If pairs is given, commands for conversion to bigWig will be made for
+    files pre-merging.
+    If merged_file_paths is given, commands for conversion to bigWig for
+    files after merging will be made.
 
     :param bw_file_paths: List of paths to bigWig files after conversion
     :param pairs: List of tuples containing paths to files that need to be
@@ -276,24 +285,24 @@ def make_bw_commands(bw_file_paths, pairs=None, merged_file_paths=None):
                               forward/reverse reads
     :return: commands: List of commands to be executed
     """
-    bedgraph_to_bw = "./Data/tools/bedGraphToBigWig "
-    chrom_sizes_path = "Data/hg19/hg19.chrom.sizes "
+    bedgraph_to_bw = "./tools/bedGraphToBigWig "
+    chrom_sizes_path = "Data/hg19/hg19.chrom.sizes " #what about other genomes??
     commands = []
 
     if pairs is not None:
         commands_first_half = []
         for pair in pairs:
             for i in range(0, 2):
-                command_first_half = bedgraph_to_bw + pair[i] + " " + \
-                                     chrom_sizes_path
+                command_first_half = bedgraph_to_bw + "\"" + pair[i] + "\"" \
+                                     + " " + chrom_sizes_path
                 commands_first_half.append(command_first_half)
         for j in range(0, len(bw_file_paths)):
-            command = commands_first_half[j] + bw_file_paths[j]
+            command = commands_first_half[j] + "\"" + bw_file_paths[j] + "\""
             commands.append(command)
     elif merged_file_paths is not None:
         for i in range(0, len(merged_file_paths)):
-            command = bedgraph_to_bw + merged_file_paths[i] + \
-                      " " + chrom_sizes_path + bw_file_paths[i]
+            command = bedgraph_to_bw + "\"" + merged_file_paths[i] + "\"" \
+                      + " " + chrom_sizes_path + "\"" + bw_file_paths[i] + "\""
             commands.append(command)
 
     return commands
@@ -302,6 +311,10 @@ def make_bw_commands(bw_file_paths, pairs=None, merged_file_paths=None):
 def convert_to_bigwig(bw_file_paths, pairs=None, merged_file_paths=None):
     """
     Method converts bedGraph files to bigWig files.
+    If pairs is given, then the method converts all forward/reverse files to
+    bigWig.
+    If merged_file_paths is given, then the method converts all merged files to
+    bigWig.
 
     :param bw_file_paths: List of paths to bigWig files after conversion
     :param pairs: List of tuples containing paths to files that need to be
