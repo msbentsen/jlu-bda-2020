@@ -1,5 +1,13 @@
 """
-Methods for merging reverse/forward reads in ATAC-seq data
+Methods for merging reverse/forward reads in ATAC-seq data.
+
+
+Use as follows:
+
+    import merge_reads
+
+    merge_reads.merge_files()
+
 
 by Kristina Müller (kmlr81)
 """
@@ -21,6 +29,9 @@ def merge_files():
         bw_file_paths = make_bw_file_paths(merged_file_paths=merged_file_paths)
         convert_to_bigwig(bw_file_paths, merged_file_paths=merged_file_paths)
         delete_old_files(bw_file_paths)
+
+    merge_pairs(pairs, bw_file_paths)
+    add_merged_files_to_csv(merged_file_paths)
 
 
 def creat_file_dict():
@@ -184,9 +195,9 @@ def make_merge_commands(pairs, bw_file_paths):
     commands = []
     idx = 0
 
-    for i in range(0, len(bw_file_paths)-1, 2):
+    for i in range(0, len(bw_file_paths) - 1, 2):
         command = bigwig_merge + "\"" + bw_file_paths[i] + "\"" + " " + "\"" \
-                  + bw_file_paths[i+1] + "\"" + " " + "\"" \
+                  + bw_file_paths[i + 1] + "\"" + " " + "\"" \
                   + merged_file_paths[idx] + "\""
         commands.append(command)
         idx += 1
@@ -258,7 +269,7 @@ def make_bw_file_paths(pairs=None, bedgraphs=None, merged_file_paths=None):
             file_path_split = merged_file_path.rsplit(".", maxsplit=1)
             file_path_bw = file_path_split[0] + ".bw"
             file_paths_bw.append(file_path_bw)
-    elif bedgraphs is not None and pairs is not None and merged_file_paths is\
+    elif bedgraphs is not None and pairs is not None and merged_file_paths is \
             None:
         for bedgraph in bedgraphs:
             file_path_split = pairs[bedgraph[0]][bedgraph[1]].rsplit(".",
@@ -286,7 +297,8 @@ def make_bw_commands(bw_file_paths, pairs=None, merged_file_paths=None):
     :return: commands: List of commands to be executed
     """
     bedgraph_to_bw = "./tools/bedGraphToBigWig "
-    chrom_sizes_path = "Data/hg19/hg19.chrom.sizes " #what about other genomes??
+    chrom_sizes_path = "data/hg19/hg19.chrom.sizes "  # what about other
+    # genomes??
     commands = []
 
     if pairs is not None:
@@ -350,3 +362,71 @@ def delete_old_files(file_paths, pairs=None):
 
     for file_path in file_paths:
         os.system(command + file_path)
+
+
+def get_rows(lt_path):
+    """
+    Method gets all rows of ATAC-seq forward reads in linkage table.
+
+    :param lt_path: Path to file linkage_table.csv
+    :return: rows: List of dictionaries; one dictionary for each row of the
+                   linkage table with column names as keys and column entry as
+                   value
+    """
+    import csv
+
+    rows = []
+
+    with open(lt_path) as linkage_table:
+        lt_reader = csv.DictReader(linkage_table, delimiter=',')
+
+        for row in lt_reader:
+            if row["technique"] == "ATAC-seq" and "forward" in row[
+                    "filename"].lower():
+                rows.append(row)
+
+    return rows
+
+
+def make_merged_rows(lt_path, merged_file_paths):
+    """
+    Method takes dicts containing all column entries for forward reads and
+    replaces fields filename, file_path and extension with information
+    matching the corresponding merged file.
+
+    :param lt_path: File path to linkage_table.csv file
+    :param merged_file_paths: List of paths to files after merging
+    :return: merged_rows: List of rows with info regarding merged files that
+                          need to be added to linkage_table.csv
+    """
+    rows = get_rows(lt_path)
+    merged_rows = []
+
+    for file_path in merged_file_paths:
+        file_name = file_path.rsplit("/", maxsplit=1)[-1]
+        extension = file_name.rsplit(".", maxsplit=1)[-1]
+        identifier = file_name.split(".")[0]
+        for row in rows:
+            if identifier in row["filename"]:
+                row["filename"] = file_name
+                row["file_path"] = file_path
+                row["extension"] = extension
+                merged_rows.append(row)
+
+    return merged_rows
+
+
+def add_merged_files_to_csv(merged_file_paths):
+    """
+    Method appends rows with information for merged files to linkage_table.csv.
+
+    :param merged_file_paths: List of paths to merged files
+    """
+    import csv
+
+    lt_path = "linkage_table.csv"
+    merged_rows = make_merged_rows(lt_path, merged_file_paths)
+
+    with open(lt_path, 'a') as file:
+        writer = csv.DictWriter(file, fieldnames=merged_rows[1].keys())
+        writer.writerows(merged_rows)
