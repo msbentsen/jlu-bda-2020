@@ -19,11 +19,19 @@ min_tools=("bedGraphToBigWig" "bigWigToBedGraph" "bigWigMerge")
 
 #==== Function =================================================================
 #  Name: validate
-#  Description: attempt to exectute a tool to see if it is callable
+#  Description: checks if the file exists and is executable and then
+#  attempt to exectute the tool to see if it is callable
 #  Parameter 1: name of the tool to validate
 #===============================================================================
 validate() {
-	"$tools_path$1"  >/dev/null 2>&1
+    local tool="$tools_path$1"
+    if [ ! -f "$tool" ]; then
+        return 1
+    elif [ ! -x "$tool" ]; then
+        chmod u+x "$tool"
+    fi
+
+	"$tool"  >/dev/null 2>&1
 	if [ "$?" == "127" ]; then
         return 1
 	fi
@@ -50,7 +58,7 @@ install_tool() {
 check () {
     validate "$1"
     local result=$?
-    if [ $result -ne 0 ]; then
+    if [ $result != 0 ]; then
         echo "$1 is not installed, trying to install"
         install_tool "$1"
         validate "$1"
