@@ -2,6 +2,19 @@
 Methods for merging reverse/forward reads in ATAC-seq data.
 
 
+Goes through the following workflow:
+
+- Reads in linkage_table.csv and identifies all ATAC-seq files with
+forwar/reverse reads that need merging
+- Groups them into pairs to be merged
+- Checks if file format is bigWig, if not converts files to bigWig
+- Merges files
+- Checks if bedGraph is an allowed format since that is the output format of
+merging tool, if not files are converted back to bigWig
+- Deletes all files that are no longer needed
+- Adds entries for merged files to linkage_table.csv
+
+
 Use as follows:
 
     import merge_reads
@@ -16,21 +29,27 @@ import os
 
 
 def merge_files():
+    """
+    Method calls the package workflow as described above.
+    """
     file_dict = creat_file_dict()
     pairs = find_pairs(file_dict)
     bedgraphs = get_bedgraph_idxs(pairs)
     merged_file_paths = make_merged_file_paths(pairs)
+    bw_file_paths = []
 
     if len(bedgraphs) > 0:
         bw_file_paths = make_bw_file_paths(pairs=pairs, bedgraphs=bedgraphs)
         convert_to_bigwig(bw_file_paths, pairs=pairs)
-        delete_old_files(bw_file_paths, pairs=pairs)
-    else:
+
+    bw_file_paths = get_all_bw_file_paths(pairs, bw_file_paths)
+    merge_pairs(pairs, bw_file_paths)
+
+    if len(bedgraphs) == 0:
         bw_file_paths = make_bw_file_paths(merged_file_paths=merged_file_paths)
         convert_to_bigwig(bw_file_paths, merged_file_paths=merged_file_paths)
-        delete_old_files(bw_file_paths)
 
-    merge_pairs(pairs, bw_file_paths)
+    delete_old_files(bw_file_paths, pairs=pairs)
     add_merged_files_to_csv(merged_file_paths)
 
 
@@ -172,8 +191,7 @@ def make_merged_file_paths(pairs):
     for i in range(0, len(pairs)):
         file_path_split = pairs[i][0].rsplit("/", maxsplit=1)
         filename_split = file_path_split[1].split("_")
-        file_ending = filename_split[1].split(".")[-1]
-        merged_filename = filename_split[0] + "_merged." + file_ending
+        merged_filename = filename_split[0] + "_merged." + "bedGraph"
         merged_file_path = file_path_split[0] + "/" + merged_filename
         merged_file_paths.append(merged_file_path)
 
@@ -203,6 +221,29 @@ def make_merge_commands(pairs, bw_file_paths):
         idx += 1
 
     return commands
+
+
+def get_all_bw_file_paths(pairs, bw_file_paths):
+    """
+    Method checks if there are any paths to files that already have bigWig
+    format and didn't need to be converted to bigWig first and adds those to
+    bw_file_paths so that they will be merged as well.
+
+    :param pairs: List of touples with pairs of forward/reverse read files
+                  that need to be merged
+    :param bw_file_paths: List of paths to files in biWig format
+    :return: bw_file_paths: Full list of paths to bigWig files in need of
+                            merging
+    """
+    if len(bw_file_paths) == len(pairs) * 2:
+        return bw_file_paths
+    else:
+        for pair in pairs:
+            for i in range(0, 2):
+                if "bw" in pair[i].rsplit(".", maxsplit=1)[-1].lower():
+                    bw_file_paths.append(pair[i])
+
+    return bw_file_paths
 
 
 def merge_pairs(pairs, bw_file_paths):
@@ -358,10 +399,11 @@ def delete_old_files(file_paths, pairs=None):
     if pairs is not None:
         for pair in pairs:
             for i in range(0, 2):
-                os.system(command + pair[i])
+                if pair[i] not in file_paths:
+                    os.system(command + "\"" + pair[i] + "\"")
 
     for file_path in file_paths:
-        os.system(command + file_path)
+        os.system(command + "\"" + file_path + "\"")
 
 
 def get_rows(lt_path):
