@@ -1,4 +1,3 @@
-# TODO: add dictionary for ATAC-data
 # TODO: adapt folder names to provided data
 
 def parse():
@@ -7,7 +6,7 @@ def parse():
     pickle files. For the bigwig files of ChIP-seq and ATAC-seq a separate pickle file is created for each biosource.
     For the bed files, a pickle file is created that contains the entire data.
     """
-    ATAC = {}
+
     bed = {}
     biosources = os.listdir("Data")
     for biosource in biosources:
@@ -26,6 +25,13 @@ def parse():
             bs_bed_dict[tf] = bed_dict
         bed[biosource] = bs_bed_dict
         with open('parsedData/ChIP-seq/' + biosource + '.pickle', 'wb') as handle:
+            pickle.dump(chip, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        atac = {}
+        for f in os.listdir("Data/" + biosource + "/ATAC-seq"):
+            if f.split(".")[1] == "bigWig":
+                atac.update(read_bigwig("Data/" + biosource + "/ATAC-seq/" + f, bed_dict))
+        with open('parsedData/ATAC-seq/' + biosource + '.pickle', 'wb') as handle:
             pickle.dump(chip, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open('parsedData/bed.pickle', 'wb') as handle:
@@ -66,9 +72,9 @@ def read_bigwig(file, d):
         for pos in d[key]:
             s = bw.intervals(key, pos[0], pos[1])
             if key in scores:
-                scores[key] = scores[key] + s
+                scores[key] = tuple(set(scores[key] + s))
             else:
-                scores[key] = s
+                scores[key] = tuple(set(s))
     return scores
 
 
