@@ -29,7 +29,7 @@ echo "${headers:0:77}filepath,${headers:77}" > "$new_link"
 #===============================================================================
 
 while IFS="," read -r experiment_id	genome	biosource	technique	\
-	epigenetic_mark	filename	data_type	extension	remaining
+	epigenetic_mark	filename	data_type	remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
@@ -51,5 +51,5 @@ do
 	newfile="$new_path$filename"
 	mv "$sourcefile" "$newfile"
 	echo "$experiment_id,$genome,$biosource,$technique,$epigenetic_mark,\
-	$filename,$data_type,$newfile,$extension,$remaining" >> "$new_link"
+	$filename,$data_type,$newfile,$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")
