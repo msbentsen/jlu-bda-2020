@@ -118,7 +118,7 @@ def read_linkage_table():
     """
     import csv
 
-    lt_path = "linkage_table.csv"
+    lt_path = "linking_table.csv"
     lt_rows = []
     files = []
     genomes = []
