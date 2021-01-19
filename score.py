@@ -8,26 +8,25 @@ Dies ist eine temporäre Skriptdatei.
 import numpy as np
 import pickle
 import os
-
-gamingPC_path = "C:\\Users\\Spyro\\OneDrive\\Uni\\Bioinformatik Master\\BS1-ZusatzC\\Data\\parsedData\\"
+import pyBigWig
 
 
 def beddata():
-    bed = pickle.load(open (gamingPC_path+"bed.pickle", "rb"))
+    bed = pickle.load(open ("parsedData/bed.pickle", "rb"))
     return bed
 
 def atacdata():
-    atac= pickle.load(open (gamingPC_path+"ATAC-seq\\GM12878.pickle", "rb"))
+    atac= pickle.load(open ("parsedData/ATAC-seq/GM12878.pickle", "rb"))
     return atac
 
 def chipdata():
-    chip = pickle.load(open (gamingPC_path+"CHIP-seq\\GM12878.pickle", "rb"))
+    chip = pickle.load(open ("parsedData/ChIP-seq/GM12878.pickle", "rb"))
     return chip
 
 
 def findarea(beddictdict, atacdict, chipdict):
     print("bed", beddictdict.keys())
-    print("atac", atacdict.keys())
+    print("atac", atacdict)
     print("chip", chipdict.keys())
     calculateddict = {}
     datadict = {}
@@ -68,9 +67,11 @@ def findarea(beddictdict, atacdict, chipdict):
     for biosource in datadict:
         if (biosource not in calculateddict):
             calculateddict[biosource]={}
+        atac=pyBigWig.open(atacdict)
         for tf in datadict[biosource]:
             if (tf not in calculateddict[biosource]):
                 calculateddict[biosource][tf]={}
+            chip=pyBigWig.open(chipdict[tf])
             for chromosom in datadict[biosource][tf]:
                 if (chromosom not in calculateddict[biosource][tf]):
                     calculateddict[biosource][tf][chromosom]=[]
@@ -78,76 +79,28 @@ def findarea(beddictdict, atacdict, chipdict):
                     #print("binding",binding)
                     start = binding[0]
                     end= binding[1]
-                    scorelist = []
                     calculationls = []
                     calculationls.append(start)
                     calculationls.append(end)
-                    fullarea_chip = 0
-                    fullarea_atac = 0
-                    add_to_scores = True
-                    ## go through chromosom and search for the wanted start/end in chipseq dict
-                    if chromosom in chipdict[tf]:
-                        for index,area in enumerate(chipdict[tf][chromosom]):
-                            if (area[0] < start and area[1] > start):
-                                #print("CHIP START area: ",chipdict[tf][chromosom][index], "index", index)
-                                scorelist.append(round(area[2] * (area[1]-start),5))
-                                fullarea_chip+=area[1]-start
-                            if (area[0] >= start and area[1] <= end):
-                                currentarea= area[1]-area[0]
-                                scorelist.append(round(area[2]*currentarea,5))
-                                fullarea_chip += currentarea
-                                if (area[1] == end):
-                                    break
-                            if (area[0] < end and area[1] > end):
-                                #print("CHIP END area: ",chipdict[tf][chromosom][index], "index", index)
-                                scorelist.append(round(area[2]* (end - area[0]),5))
-                                fullarea_chip+= end - area[0]
-                                break
-                    else:
-                        add_to_scores = False
-                    #calcilate mean of chipseq scores in that start/stop area
-                    if (scorelist != [] and fullarea_chip != 0):
-                        #print(scorelist)
-                        calculationls.append(np.sum(scorelist)/fullarea_chip)
-                    else:
-                        add_to_scores = False
-                    scorelist = []
-                    
-                    fullarea_chip = 0
-                    ## go through chromosom and search for the wanted start/end in atac dict
-                    if chromosom in atacdict[tf]:
-                        for index,area in enumerate(atacdict[tf][chromosom]):
-                            
-                            if (area[0] < start and area[1] > start):
-                                #print("ATAC START area: ",atacdict[tf][chromosom][index], "index", index)
-                                scorelist.append(round(area[2] * (area[1]-start),5))
-                                fullarea_atac+=area[1]-start
-                            if (area[0] >= start and area[1] <= end):
-                                currentarea= area[1]-area[0]
-                                scorelist.append(round(area[2]*currentarea,5))
-                                fullarea_atac += currentarea
-                                if (area[1] == end):
-                                    break
-                            if (area[0] < end and area[1] > end):
-                                #print("ATAC END area: ",atacdict[tf][chromosom][index], "index", index)
-                                scorelist.append(round(area[2] * (end - area[0]),5))
-                                fullarea_atac+= end - area[0]
-                                break
-                    else:
-                        add_to_scores = False
-                    
-                    #calcilate mean of atacseq scores in that start/stop area
-                    if (scorelist != [] and fullarea_atac!=0):
-                        calculationls.append(np.sum(scorelist)/fullarea_atac)
-                    else:
-                        add_to_scores = False
-                    fullarea_atac = 0
-                    
-                    #write mean of chip/atac to a dict: [start, stop, mean of chip scores, mean of atac scores]
-                    if add_to_scores == True:
-                        calculateddict[biosource][tf][chromosom].append(calculationls)
+                    ## call scores between start and end from atac and chip using pyBigWig 
+                    if chromosom in chip.chroms() and chromosom in atac.chroms():
+                        chip_score=chip.intervals(chromosom,start,end)
+                        atac_score=atac.intervals(chromosom,start,end)
+                        for i in (chip_score, atac_score):
+                            len=0
+                            mean=0
+                            for interval in i:
+                                if interval[1]>end:
+                                    l=(interval[1]-interval[0])-(interval[1]-end)
+                                else:
+                                    l=interval[1]-interval[0]
+                                len+=l
+                                mean+=l*interval[2]
+                            mean=mean/len
+                            calculationls.append(mean)
+                    calculateddict[biosource][tf][chromosom].append(calculationls)
                 print(chromosom, "done")
-    print(calculateddict)
+    #print(calculateddict)
     file_to_write = open("calculated_data.pickle", "wb")
     pickle.dump(calculateddict, file_to_write)
     return
