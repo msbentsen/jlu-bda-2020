@@ -42,7 +42,7 @@ validate() {
 #==== Function =================================================================
 #  Name: install_tool
 #  Description: attempt to install a tool into the tool directory
-#  Parameter 1: name of the tool to validate
+#  $1: name of the tool to validate
 #===============================================================================
 install_tool() {
    wget --quiet --tries 2 "https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/$1"
@@ -53,7 +53,7 @@ install_tool() {
 #==== Function =================================================================
 #  Name: check
 #  Description: checks wheter a tool is available and attempts to install if not
-#  Parameter 1: name of the tool to validate
+#  $1: name of the tool to validate
 #===============================================================================
 check () {
     validate "$1"

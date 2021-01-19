@@ -1,5 +1,17 @@
 #!/bin/bash
-
+#===============================================================================
+#
+#  FILE:  convert.sh
+#
+#  USAGE:  convert.sh [filetype to convert to]
+#					[path to files] [csv_path]
+#
+#  DESCRIPTION:  Validate and convert  files in src_path according to the
+#				parameters. At the same time ensure proper file-naming.
+#
+#  NOTES:  ---
+#  AUTHOR:  Jonathan Schäfer
+#===============================================================================
 filetype=$1
 source_path=$2
 csv_path=$3
@@ -7,6 +19,14 @@ csv_path=$3
 new_link=$source_path/linking.csv
 export new_filename=""
 
+
+#==== Function =================================================================
+#  Name: validate_file
+#  Description: Validates that the file extension of a file fits the content of
+#  a file by comparing the filename to the format provided in the .csv
+#  $1 = filename of the file to check
+#  $2 = format of the filecontent
+#===============================================================================
 validate_file () {
 	local file_extension=${$1##*.}
 	local filetype
@@ -33,7 +53,14 @@ validate_file () {
 	return 0
 }
 
-
+#==== Function =================================================================
+#  Name: convert_file
+#  Description: Converts a file into the requested format (atm only bigwig).
+#  converts .bed to .bedgraph and then calls the appropriate ucsc tool
+#  $1 = file to convert
+#  §2 = filetype to convert to
+#  $3 = genome of the filecontent, needed for chrom.sizes
+#===============================================================================
 convert_files() {
 	local file_extension=${$1##*.}
 	local file_name=${$1%.*}
@@ -47,6 +74,11 @@ convert_files() {
 	fi
 }
 
+
+#===============================================================================
+# Goes through all lines of the .csv and validates the file before attempting
+# to convert it to the proper filetype
+#===============================================================================
 while IFS="," read -r experiment_id	genome	biosource	technique	\
 	epigenetic_mark	filename	data_type	format	remaining
 do
