@@ -13,10 +13,12 @@ def parse():
 	bed = {}
 	biosources = os.listdir("Data")
 	for biosource in biosources:
-		if not os.path.exists('parsedData/ChIP-seq/' + biosource):
-			os.mkdir('parsedData/ChIP-seq/' + biosource)
-		if not os.path.exists('parsedData/ATAC-seq/' + biosource):
-			os.mkdir('parsedData/ATAC-seq/' + biosource)
+		if not os.path.exists('parsedData'):
+			os.mkdir('parsedData')
+		if not os.path.exists('parsedData/ChIP-seq/'):
+			os.mkdir('parsedData/ChIP-seq/')
+		if not os.path.exists('parsedData/ATAC-seq/'):
+			os.mkdir('parsedData/ATAC-seq/')
 		bs_bed_dict = {}
 		chip = {}
 		tfs = os.listdir("Data/" + biosource + "/ChIP-seq")
