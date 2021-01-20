@@ -92,7 +92,7 @@ def findarea(w, genom):
 
 
 def main():
-    genom="genom"
+    genom="hg19"
     w=50
     findarea(w,genom)
     
