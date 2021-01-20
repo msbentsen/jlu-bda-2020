@@ -11,39 +11,43 @@ def parse():
 	"""
 
 	bed = {}
-	biosources = os.listdir("Data")
-	for biosource in biosources:
+	genomes=os.listdir("Data")
+	for genome in genomes:
+		biosources = os.listdir("Data/"+genome)
 		if not os.path.exists('parsedData'):
 			os.mkdir('parsedData')
-		if not os.path.exists('parsedData/ChIP-seq/'):
-			os.mkdir('parsedData/ChIP-seq/')
-		if not os.path.exists('parsedData/ATAC-seq/'):
-			os.mkdir('parsedData/ATAC-seq/')
-		bs_bed_dict = {}
-		chip = {}
-		tfs = os.listdir("Data/" + biosource + "/ChIP-seq")
-		for tf in tfs:
-			bed_dict = {}
-			files = os.listdir("Data/" + biosource + "/ChIP-seq/" + tf)
-			for f in files:
-				if f.split(".")[1] == "bed":
-					bed_dict.update(read_bed("Data/" + biosource + "/ChIP-seq/" + tf + "/" + f))
-				elif f.split(".")[1] == "bigWig":
-					bigwig_file = f
-			chip[tf] = ("Data/" + biosource + "/ChIP-seq/" + tf + "/" + bigwig_file)
-			with open('parsedData/ChIP-seq/' + biosource + '.pickle', 'wb') as handle:
-				pickle.dump(chip, handle, protocol=pickle.HIGHEST_PROTOCOL)
-			bs_bed_dict[tf] = bed_dict
-		bed[biosource] = bs_bed_dict
+		if not os.path.exists('parsedData/'+genome):
+			os.mkdir('parsedData/'+genome)
+		for biosource in biosources:
+			if not os.path.exists('parsedData/'+genome+'/ChIP-seq/'):
+				os.mkdir('parsedData/'+genome+'/ChIP-seq/')
+			if not os.path.exists('parsedData/'+genome+'/ATAC-seq/'):
+				os.mkdir('parsedData/'+genome+'/ATAC-seq/')
+			bs_bed_dict = {}
+			chip = {}
+			tfs = os.listdir("Data/"+ genome + "/" + biosource + "/ChIP-seq")
+			for tf in tfs:
+				bed_dict = {}
+				files = os.listdir("Data/"+ genome + "/"  + biosource + "/ChIP-seq/" + tf)
+				for f in files:
+					if f.split(".")[1] == "bed":
+						bed_dict.update(read_bed("Data/" + genome + "/"+ biosource + "/ChIP-seq/" + tf + "/" + f))
+					elif f.split(".")[1] == "bigWig":
+						bigwig_file = f
+				chip[tf] = ("Data/"+ genome + "/" + biosource + "/ChIP-seq/" + tf + "/" + bigwig_file)
+				with open('parsedData/'+genome+'/ChIP-seq/' + biosource + '.pickle', 'wb') as handle:
+					pickle.dump(chip, handle, protocol=pickle.HIGHEST_PROTOCOL)
+				bs_bed_dict[tf] = bed_dict
+			bed[biosource] = bs_bed_dict
 
-		for f in os.listdir("Data/" + biosource + "/ATAC-seq"):
-			if f.split(".")[1] == "bigWig":
-				atac=("Data/" + biosource + "/ATAC-seq/" + f)
-				with open('parsedData/ATAC-seq/' + biosource + '.pickle', 'wb') as handle:
-					pickle.dump(atac, handle, protocol=pickle.HIGHEST_PROTOCOL)
+			for f in os.listdir("Data/"+ genome + "/" + biosource + "/ATAC-seq"):
+				if f.split(".")[1] == "bigWig":
+					atac=("Data/"+ genome + "/" + biosource + "/ATAC-seq/" + f)
+					with open('parsedData/'+genome+'/ATAC-seq/' + biosource + '.pickle', 'wb') as handle:
+						pickle.dump(atac, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-	with open('parsedData/bed.pickle', 'wb') as handle:
-		pickle.dump(bed, handle, protocol=pickle.HIGHEST_PROTOCOL)
+		with open('parsedData/'+genome+'/bed.pickle', 'wb') as handle:
+			pickle.dump(bed, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def read_bed(file):
@@ -57,7 +61,7 @@ def read_bed(file):
 		s = line.split("\t")
 		start = int(s[1])
 		stop = int(s[2])
-		score = float(s[4])
+		score = float(s[7])
 		peak = int(s[9])
 		if s[0] in chromosome:
 			chromosome[s[0]].append([start, stop, score, peak])
