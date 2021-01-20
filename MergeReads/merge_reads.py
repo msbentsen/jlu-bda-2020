@@ -240,7 +240,8 @@ def get_all_bw_file_paths(pairs, bw_file_paths):
     else:
         for pair in pairs:
             for i in range(0, 2):
-                if "bw" in pair[i].rsplit(".", maxsplit=1)[-1].lower():
+                if "bw" in pair[i].rsplit(".", maxsplit=1)[-1].lower() or \
+                        "bigwig" in pair[i].rsplit(".", maxsplit=1)[-1].lower():
                     bw_file_paths.append(pair[i])
 
     return bw_file_paths
