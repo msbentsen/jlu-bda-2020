@@ -80,10 +80,10 @@ def findarea(beddictdict, atacdict, chipdict):
                     start = binding[0]
                     end= binding[1]
                     calculationls = []
-                    calculationls.append(start)
-                    calculationls.append(end)
                     ## call scores between start and end from atac and chip using pyBigWig 
                     if chromosom in chip.chroms() and chromosom in atac.chroms():
+                        calculationls.append(start)
+                        calculationls.append(end)
                         chip_score=chip.intervals(chromosom,start,end)
                         atac_score=atac.intervals(chromosom,start,end)
                         for i in (chip_score, atac_score):
@@ -98,7 +98,7 @@ def findarea(beddictdict, atacdict, chipdict):
                                 mean+=l*interval[2]
                             mean=mean/len
                             calculationls.append(mean)
-                    calculateddict[biosource][tf][chromosom].append(calculationls)
+                        calculateddict[biosource][tf][chromosom].append(calculationls)
                 print(chromosom, "done")
     #print(calculateddict)
     file_to_write = open("calculated_data.pickle", "wb")
