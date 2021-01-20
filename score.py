@@ -5,33 +5,18 @@ Spyder Editor
 Dies ist eine temporäre Skriptdatei.
 """
 
-import numpy as np
 import pickle
-import os
 import pyBigWig
 
-
-def beddata():
-    bed = pickle.load(open ("parsedData/bed.pickle", "rb"))
-    return bed
-
-def atacdata():
-    atac= pickle.load(open ("parsedData/ATAC-seq/GM12878.pickle", "rb"))
-    return atac
-
-def chipdata():
-    chip = pickle.load(open ("parsedData/ChIP-seq/GM12878.pickle", "rb"))
-    return chip
-
-
-def findarea(beddictdict, atacdict, chipdict):
+def findarea(w, genom):
+    beddictdict = pickle.load(open("parsedData/"+genom+"/bed.pickle", "rb"))
     print("bed", beddictdict.keys())
-    print("atac", atacdict)
-    print("chip", chipdict.keys())
     calculateddict = {}
     datadict = {}
     ## get Peak and Area from Bed-Dict and safe it do another Dictionary (datadice)
     for biosource in beddictdict:
+        atacdict = pickle.load(open("parsedData/"+genom+"/ATAC-seq/"+biosource+".pickle", "rb"))
+        chipdict = pickle.load(open("parsedData/"+genom+"/ChIP-seq/"+biosource+".pickle", "rb"))
         if (biosource not in datadict):
             datadict[biosource]={}
         for tf in beddictdict[biosource]:
@@ -49,8 +34,8 @@ def findarea(beddictdict, atacdict, chipdict):
                     #peak von start aus?
                     peaklocation = start + peak
                     #peakbereich hardcoded --> Usereingabe !!
-                    peaklocationstart = peaklocation - 50
-                    peaklocationend = peaklocation + 50
+                    peaklocationstart = peaklocation - w
+                    peaklocationend = peaklocation + w
                     
                     if (peaklocationstart < start ):
                         peaklocationstart = start
@@ -107,7 +92,9 @@ def findarea(beddictdict, atacdict, chipdict):
 
 
 def main():
-    findarea(beddata(), atacdata(), chipdata())
+    genom="genom"
+    w=50
+    findarea(w,genom)
     
     return
 
