@@ -82,7 +82,7 @@ convert_files() {
 while IFS="," read -r experiment_id	genome	biosource	technique	\
 	epigenetic_mark	filename	data_type	format	remaining
 do
-	if [ ! -e "source_path/$filename" ]; then
+	if [ ! -e "$source_path/$filename" ]; then
 		continue
 	fi
 
