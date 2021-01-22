@@ -37,10 +37,11 @@ def findarea(w, genom):
                     peaklocationstart = peaklocation - w
                     peaklocationend = peaklocation + w
                     
-                    if (peaklocationstart < start ):
-                        peaklocationstart = start
-                    if (peaklocationend > stop):
-                        peaklocationend = stop
+                    #window can overlap the actual peak start/end and has a fixed size now, following commented code was for not fixed window sizes
+                    #if (peaklocationstart < start ):
+                    #    peaklocationstart = start
+                    #if (peaklocationend > stop):
+                    #    peaklocationend = stop
                     #print("start", peaklocationstart, "stop", peaklocationend)
                     startendls= []
                     startendls.append(peaklocationstart)
