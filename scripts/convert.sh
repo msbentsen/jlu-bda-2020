@@ -61,13 +61,13 @@ validate_file () {
 #  $1 = file to convert
 #  §2 = filetype to convert to
 #  $3 = genome of the filecontent, needed for chrom.sizes
-#===============================================================================
+#=============================================================	==================
 convert_files() {
 	local file_extension=${$1##*.}
 	local file_name=${$1%.*}
 	if [ "$2" == "bigwig" ] | [ "$2" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
-			cut --fields 1-3,5 "$source_path$1" > "$source_path$file_name.bedgraph"
+			cut --fields 1-3,5 "$source_path/$1" > "$source_path/$file_name.bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
 			./tools/bedGraphToBigWig "$1" "$source_path/$3.chrom.sizes" "$file_name.bw"
@@ -87,7 +87,7 @@ do
 		continue
 	fi
 
-	source_file="$source_path$filename"
+	source_file="$source_path/$filename"
 	if [[ "$(validate_filetype "$filename" "$format")" != "0" ]]; then
 	 filename=$new_filename
 	fi

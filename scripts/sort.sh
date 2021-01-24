@@ -37,19 +37,19 @@ do
 	fi
 
 	if [ "$technique" == "ATAC-Seq" ]; then
-		new_path=$dest_path/$biosource/$technique/
+		new_path="$dest_path/$biosource/$technique"
 	elif [ "$technique" == "ChIP-seq" ]; then
-		new_path=$dest_path/$biosource/$technique/$epigenetic_mark/
+		new_path="$dest_path/$biosource/$technique/$epigenetic_mark"
 	elif [ "$technique" == "DNase-seq" ]; then
-		new_path=$dest_path/$biosource/$technique/
+		new_path="$dest_path/$biosource/$technique"
 	else
 		echo "error, invalid sequencing technique for file $filename"
 		exit 1
 	fi
 
 	mkdir -p "$new_path"
-	sourcefile="$source_path$filename"
-	newfile="$new_path$filename"
+	sourcefile="$source_path/$filename"
+	newfile="$new_path/$filename"
 	mv "$sourcefile" "$newfile"
 	echo "$experiment_id,$genome,$biosource,$technique,$epigenetic_mark,\
 	$filename,$data_type,$newfile,$remaining" >> "$new_link"
