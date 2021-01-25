@@ -1,21 +1,53 @@
 import subprocess
+import os
 
 
-def pull_data(source_path, dest_path, csv_path, *args):
-    # install tools needed for processing
-    rc = subprocess.call("./scripts/tools.sh")
-    if rc != 0:
-        print("error installing tools")
-    # Download data
-    rc = subprocess.call("./scripts/download.r")
-    if rc != 0:
-        print("error")
-    # validate and convert files as needed
-    rc = subprocess.call("./scripts/convert.sh")
-    if rc != 0:
-        print("error converting files")
-    # Sort files into folderstructure
-    rc = subprocess.call(
-        ["./scripts/sort.sh", source_path, dest_path, csv_path])
-    if rc != 0:
-        print("error")
+class data_config:
+    def __init__(self, genome, biosource, epigenetic_mark, filetype):
+        self.genome = genome
+        self.biosource = biosource
+        self.epigenetic_mark = epigenetic_mark
+        self.basepath = os.getcwd()
+
+
+def pull_data(config):
+    generate_csv(config.path, config.genome,
+                 config.biosource, config.epigenetic_mark)
+    download_data(config.path)
+    validate_convert_files(config.path, config.filetype)
+    merge_forward_reversre(config.path)
+    normalize(config.path)
+    sort_files(config.path)
+    generate_dictionaries()
+
+
+def install_tools(path, tools):
+    pass
+
+
+def generate_csv(path, genome, biosource, epigenetic_mark):
+    pass
+
+
+def download_data(path):
+    pass
+
+
+def validate_convert_files(path, filetype):
+    pass
+
+
+def merge_forward_reversre(path):
+    pass
+
+
+def sort_files(path):
+    pass
+
+
+def normalize(path):
+    pass
+
+
+def generate_dictionaries():
+    pass
