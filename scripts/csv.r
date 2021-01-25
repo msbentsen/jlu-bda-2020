@@ -91,6 +91,9 @@ create_linking_table <- function(use_similar_bsources=TRUE,use_chip_signals=FALS
   
   if(nrow(csv) > 0) {
     write.csv(csv,file="linking_table.csv",row.names=FALSE)
+    # remove newline characters
+    t <- read.csv("linking_table.csv",na.strings = "\n")
+    write.csv(t,file="linking_table.csv",na="",row.names=FALSE)
   }
 }
 
