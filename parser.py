@@ -67,7 +67,7 @@ def parse():
 
 			# a pickle file is created that contains the paths to the chip bigwig files of one biosource
 			# it is named after the biosource
-			with open('parsedData/' + genome + '/ChIP-seq/' + biosource + '2.pickle', 'wb') as handle:
+			with open('parsedData/' + genome + '/ChIP-seq/' + biosource + '.pickle', 'wb') as handle:
 				pickle.dump(chip, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 			# the bed data of the biosource is stored in the dictionary for the genome with biosource as key
