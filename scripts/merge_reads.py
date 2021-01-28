@@ -96,8 +96,10 @@ def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
         rows.append(row)
 
     #add merged file entries to linkage table
-    #for row in rows:
-        #add_row(row, linkage_table_path, column_names)
+    #Problem: The column values of the rows are added in the wrong order
+    #Still needs fixing
+    for row in rows:
+        add_row(row, linkage_table_path, column_names)
 
 
 def read_linkage_table(linkage_table):
@@ -214,3 +216,18 @@ def delete_file(file_path):
     command = "rm \"" + file_path + "\""
 
     os.system(command)
+
+
+def add_row(merged_file_row, linkage_table_path, column_names):
+    """
+    Adds a new row to the linkage table .csv file.
+
+    :param merged_file_row: Dictionary with column names as keys and column
+                            values as values representing one row
+    :param linkage_table_path: String containing path to linkage table .csv file
+    :param column_names: List of Strings with column names
+    """
+
+    with open(linkage_table_path, 'a') as file:
+        writer = csv.DictWriter(file, fieldnames=column_names)
+        writer.writerow(merged_file_row)
