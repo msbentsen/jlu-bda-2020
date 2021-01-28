@@ -1,6 +1,10 @@
 #!/usr/bin/env Rscript
+required_packages <- c("BiocManager","dplyr")
+install.packages(setdiff(required_packages,rownames(installed.packages())))
+if(!"DeepBlueR" %in% installed.packages()) BiocManager::install("DeepBlueR")
 library(DeepBlueR)
 library(dplyr)
+
 create_linking_table <- function(use_similar_bsources=TRUE,use_chip_signals=FALSE,homo_only=TRUE) {
   
   new_row <- function(e,metadata) {
