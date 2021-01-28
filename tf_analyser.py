@@ -36,7 +36,6 @@ def main():
 
     # test, if valid parameters were submitted
     # throw GetOptError if not, print help and exit program
-    # possible arguments:
     try:
         opts, args = getopt.getopt(argv[1:], "hg:b:t:w:", ["genome=", "biosource=", "tf=", "w="])
     except getopt.GetoptError:
@@ -116,7 +115,7 @@ def main():
 
     # run the script score.py and store the calculated scores in the dictionary 'scores'
     scores = score.findarea(w, genome, biosource, tf)
-    
+
     # test if 'scores' is an empty dictionary
     # if yes, notify that there is no data for the submitted combination of genome, biosource and
     # transcription factor and exit the program
