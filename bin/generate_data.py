@@ -11,7 +11,7 @@ class data_config:
         self.genome = genome
         self.biosource = biosource
         self.epigenetic_mark = epigenetic_mark
-        self.basepath = os.getcwd()
+        self.basepath = os.path.dirname(os.path.abspath(__file__))
         self.filetype = filetype
 
 
