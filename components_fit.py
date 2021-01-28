@@ -13,12 +13,14 @@ import scipy
 
 class GmFit:
     
+    #Generate gaussian distribution
     def normaldist(self, loc, stdw, size):
         
         ndist = np.random.normal(loc, stdw, size)
         
         return (ndist)
     
+    #Make intervalls to compare original distribution with generated distribution
     def getIntervalls(self, ndist, highscore, components):
         
         if components % components == 0:
@@ -52,7 +54,7 @@ class GmFit:
         
         return (intervalls)
     
-    
+    #EM algorythmus fit gaussian distributions in given distribution
     def emAnalyse(self, X_train, n_cgauss):
         
         n_stdwX = []
@@ -127,27 +129,44 @@ class GmFit:
         
         return (all_diffs)
         
-    
-    def evaluateComponents(self, all_diffs):
+    #Evaluate number of components
+    def evaluate(self, all_diffs):
           
         x = []
-        count= 0
+        count = 0
+        cutoff= 0
         for i in range(0, len(all_diffs)):
             
             x.append(all_diffs[0]/all_diffs[i])
             
         for j in range(0, len(x)):
             
-            count +=1
             if x[j]>x[j+1]:
+                cutoff = all_diffs[j]*1.05
                 break
             
             else:
                 pass
-                
+        # print("Cutoff: ")
+        # print(cutoff)
+        for k in all_diffs:
+            count += 1
+            if k < cutoff:
+                break
+        
         return (x, count)
         
-         
+        
+    def evaluate_componets(scores_array, max_components):
+        
+        all_diffs = GmFit().getDifference(scores_array, max_components)
+        
+        x, count = GmFit().evaluate(all_diffs)
+        
+        return (count)
+    
+    
+
 if __name__ == '__main__':
     
     # from TestdataMaker import Testdata_Maker
@@ -242,18 +261,18 @@ if __name__ == '__main__':
     # filtered = Testdata_Maker().cutoff(scores_array)
     # distribution = filtered
     
-    from Interface_Scoring import LoadPickle as SC
+    from interface_scoring import LoadPickle as SC
     
     distribution = SC().loadData(path='/home/jan/python-workspace/angewendete_daten_analyse/testsets/calculated_data_3.pickle')
 
     all_diffs = GmFit().getDifference(distribution, n_components)
     
     print(all_diffs)
-    x, count = GmFit().evaluateComponents(all_diffs)
-    # plt.pyplot.plot(all_diffs)
+    x, count = GmFit().evaluate(all_diffs)
+    plt.pyplot.plot(all_diffs)
     dif = np.diff(all_diffs)
     difdif = np.diff(dif)
     print(x)
     print(count)
-    plt.pyplot.plot(all_diffs)
+    #plt.pyplot.plot(all_diffs)
         

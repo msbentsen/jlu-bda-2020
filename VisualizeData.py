@@ -13,6 +13,7 @@ from sklearn.mixture import GaussianMixture
 
 class VisualizeData:
     
+        #Make Density Scatter Heatmap
         def displayDensityScatter(self,scores_array):
         
             x = []
@@ -41,13 +42,14 @@ class VisualizeData:
             fig, ax = plt.subplots()
             ax.scatter(x, y, c=z, s=50, edgecolors='face')
             
-            ax.set(xlim=(0,1000), ylim=(0,10000))
+            ax.set(xlim=(0,60), ylim=(0,14))
             plt.xlabel("ATAC")
             plt.ylabel("Chip")
             #plt.colorbar()
             
             plt.show()
         
+        #Make contourPlot
         def contourPlot(self, scores_array, n_cgauss):
         
             x = []
@@ -78,7 +80,7 @@ class VisualizeData:
             # ax.plot_surface(x, y, z, color='b')
             plt.show()
             
-            
+        #Make altitude Plot
         def altitudePlot(self, data, n_cgauss):
         
             gmm = GaussianMixture(n_components=n_cgauss)
