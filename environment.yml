@@ -1,0 +1,11 @@
+name: wg1
+channels:
+  - bioconda
+  - anaconda
+dependencies:
+  #- bioconductor-deepbluer
+  - ucsc-bedgraphtobigwig
+  - ucsc-bigwigtobedgraph
+  - ucsc-bigwigmerge
+  - pandas
+  - nodejs
