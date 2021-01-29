@@ -11,7 +11,12 @@ def parse():
 	"""
 
 	# list all genome folders in folder data
+	# remove files and folders that are not genomes
 	genomes = os.listdir('data')
+	for x in ['pickledata', 'temp', 'linking_table.csv']:
+		if x in genomes:
+			genomes.remove(x)
+
 
 	for genome in genomes:
 
@@ -19,7 +24,10 @@ def parse():
 		bed = {}
 
 		# list all biosource folders for one genome
+		# remove files that are not biosources
 		biosources = os.listdir('data/' + genome)
+		if str(genome + '.chrom.sizes') in biosources:
+			biosources.remove(str(genome + '.chrom.sizes'))
 
 		# create folder structure for pickle files if it does not exist
 		if not os.path.exists('parsedData'):
