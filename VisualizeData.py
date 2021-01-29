@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 import numpy as np
 from sklearn.mixture import GaussianMixture
+from mpl_toolkits.mplot3d import Axes3D
+
 
 class VisualizeData:
     
