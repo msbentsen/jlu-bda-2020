@@ -34,9 +34,9 @@ class Main:
         sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', suffix))
         sys.stdout.flush()
         
-    def mainloop(self, path):
+    def mainloop(self, data):
         
-        data = Input().inputHandler(path)
+        #data = Input().inputHandler(path)
         total = Input().number_of_chr(data)
         
         resultframe =pd.DataFrame(columns=['biosource','tf','means','covariances', 'weights']) 
@@ -62,7 +62,7 @@ class Main:
                 
                 scaled_scores = Main().scale(scoresarray)
                 distribution = np.array(scaled_scores)
-                
+
                 if self.evaluate_n == True:
                     
                     all_diffs = GmFit().getDifference(distribution, self.eval_size)
@@ -115,8 +115,8 @@ class Main:
         
         
     
-resultframe = Main().mainloop(path='/home/jan/python-workspace/angewendete_daten_analyse/testsets/calculated_data_3.pickle')
-print(resultframe)
+#resultframe = Main().mainloop(data=scores)
+#print(resultframe)
         
                 
                 
