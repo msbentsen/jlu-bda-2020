@@ -17,7 +17,8 @@ def main():
     # import score, author: Noah
     import score
 
-    # TODO: import Jan's part
+    # import analyse_main, author: Jan
+    import analyse_main
 
     # TODO: test if part one was executed
 
@@ -125,8 +126,9 @@ def main():
         print("there is no data for your entered combination of genome, biosource and transcription factor")
         exit(3)
 
-    # TODO: Jan's Part
-
+    # generate plots with the script analyse_main.py
+    resultframe = analyse_main.Main().mainloop(data=scores)
+    print(resultframe)
 
 if __name__ == '__main__':
     import pandas as pd
