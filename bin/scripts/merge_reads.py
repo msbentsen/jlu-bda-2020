@@ -5,7 +5,7 @@ Methods for merging reverse/forward reads in ATAC-seq data.
 Goes through the following workflow:
 
 - Reads in linkage_table.csv and identifies all ATAC-seq files with
-  forwar/reverse reads that need merging
+  forward/reverse reads that need merging
 - Groups them into pairs to be merged
 - Checks if file format is bigWig, if not converts files to bigWig
 - Merges files
@@ -32,13 +32,14 @@ import pandas as pd
 
 
 def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
-              merge_tool_path):
+              merge_tool_path, allowed_file_formats):
     """
     Method merges all forward/reverse ATAC-seq files after converting them to
     bigWig format if necessary, checks if merged files need to be converted
-    to bigWig and does so if true, then deletes old files nad adds entires for
+    to bigWig and does so if true, then deletes old files nad adds entries for
     new files to the linkage table .csv file.
 
+    :param allowed_file_formats: List of Strings with allowed file formats
     :param linkage_table_path: String containing path to linking_table.csv
     :param chrom_sizes_paths: Array of Strings containing paths to all
            chrom.sizes files
@@ -54,15 +55,15 @@ def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
     merged_files = []
     rows = []
 
-    #If file format of forward/reverse reads is bedGrapfh, then convert to
-    #bigWig for merging tool and save paths of pre-conversion files to be
-    #deleted later
+    # If file format of forward/reverse reads is bedGraph, then convert to
+    # bigWig for merging tool and save paths of pre-conversion files to be
+    # deleted later
     for pair in pairs:
         for i in range(0, len(pair)):
             if ".begraph" in pair[i].lower():
                 genome = linkage_frame.loc[linkage_frame["file_path"] ==
                                            pair[i]]["genome"]
-                #Find the right chrom.sizes file for genome
+                # Find the right chrom.sizes file for genome
                 chrom_sizes = [el for el in chrom_sizes_paths if genome in el]
                 bw_file_path = convert_bedgraph_to_bigwig(pair[i],
                                                           chrom_sizes[0],
@@ -70,34 +71,47 @@ def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
                 old_files.append(pair[i])
                 pair[i] = bw_file_path
 
-    #Merge all file pairs with tool and save paths to new files
+    # Merge all file pairs with tool and save paths to new files
     for pair in pairs:
         merged_files.append(merge_pair(pair[0], pair[1], merge_tool_path))
 
-    #add option to convert merged files to bigWig format
+    # add option to convert merged files to bigWig format
+    allowed_file_formats = [file_format.lower() for file_format in
+                            allowed_file_formats]
+    if "bedgraph" not in allowed_file_formats:
+        tmp_paths = []
+        for j in range(0, len(merged_files)):
+            genome = linkage_frame.loc[linkage_frame["file_path"] ==
+                                       pairs[j][0]]["genome"]
+            chrom_sizes = [el for el in chrom_sizes_paths if genome in el]
+            bw_file_path = convert_bedgraph_to_bigwig(merged_files[j],
+                                                      chrom_sizes[0],
+                                                      conversion_tool_path)
+            tmp_paths.append(bw_file_path)
+        merged_files = tmp_paths
 
-    #Check if there are any file paths saved from having converted
-    #forward/reverse files to bigWig, if so delete them
+    # Check if there are any file paths saved from having converted
+    # forward/reverse files to bigWig, if so delete them
     if len(old_files) > 0:
         for file in old_files:
             delete_file(file)
 
-    #Delete all forward/reverse files in bigWig format now that they have
-    #been merged
+    # Delete all forward/reverse files in bigWig format now that they have
+    # been merged
     for pair in pairs:
-        for i in range(0, len(pair)):
-            delete_file(pair[i])
+        for k in range(0, len(pair)):
+            delete_file(pair[k])
 
-    #Generate rows to append to linkage table .csv file for merged files
-    for i in range(0, len(merged_files)):
-        row = linkage_frame.loc[linkage_frame["file_path"] == pairs[i][0]]
-        row["file_path"] = merged_files[i]
+    # Generate rows to append to linkage table .csv file for merged files
+    for l in range(0, len(merged_files)):
+        row = linkage_frame.loc[linkage_frame["file_path"] == pairs[l][0]]
+        row["file_path"] = merged_files[l]
         row = row.to_csv()
         rows.append(row)
 
-    #add merged file entries to linkage table
-    #Problem: The column values of the rows are added in the wrong order
-    #Still needs fixing
+    # add merged file entries to linkage table
+    # Problem: The column values of the rows are added in the wrong order
+    # Still needs fixing
     for row in rows:
         add_row(row, linkage_table_path, column_names)
 
