@@ -9,91 +9,90 @@ import pickle
 import pyBigWig
 import os
 
+
 def findarea(w, genom, biosource_ls, tf_ls):
-
     # path to pickledata
-    picklepath=str(os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts","data/pickledata/"))
+    picklepath = str(os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts", "data/pickledata/"))
 
-    beddictdict = pickle.load(open(picklepath+genom+"/bed.pickle", "rb"))
-    print("bed", beddictdict.keys())
+    beddict = pickle.load(open(picklepath + genom + "/bed.pickle", "rb"))
     calculateddict = {}
-    datadict = {}
-    ## get Peak and Area from Bed-Dict and safe it do another Dictionary (datadice)
-    for biosource in beddictdict:
-        atacdict = pickle.load(open(picklepath+genom+"/ATAC-seq/"+biosource+".pickle", "rb"))
-        chipdict = pickle.load(open(picklepath+genom+"/ChIP-seq/"+biosource+".pickle", "rb"))
-        if (biosource not in datadict):
-            datadict[biosource]={}
-        for tf in beddictdict[biosource]:
-            if (tf not in datadict[biosource]):
-                datadict[biosource][tf]={}
-            for chromosom in beddictdict[biosource][tf]:
-                
-                if (chromosom not in datadict[biosource][tf]):
-                    datadict[biosource][tf][chromosom]=[]
-                for foundbinding in beddictdict[biosource][tf][chromosom]:
-                    start = foundbinding[0]
-                    stop = foundbinding[1]
-                    score = foundbinding[2]
-                    peak = foundbinding[3]
-                    #peak von start aus?
-                    peaklocation = start + peak
-                    #peakbereich hardcoded --> Usereingabe !!
-                    peaklocationstart = peaklocation - w
-                    peaklocationend = peaklocation + w
-                    
-                    #window can overlap the actual peak start/end and has a fixed size now, following commented code was for not fixed window sizes
-                    #if (peaklocationstart < start ):
-                    #    peaklocationstart = start
-                    #if (peaklocationend > stop):
-                    #    peaklocationend = stop
-                    #print("start", peaklocationstart, "stop", peaklocationend)
-                    startendls= []
-                    startendls.append(peaklocationstart)
-                    startendls.append(peaklocationend)
-                    datadict[biosource][tf][chromosom].append(startendls)
-                    startendls= []
 
-    ## go through datadict for each biosource, then each tf, then each chromosom, then every binding that was found in the bed-file
-    for biosource in datadict:
+    # go through beddict for each biosource, then each tf, then each chromosom, then every binding
+    # get Peak and Area from beddict and calculate the scores
+    for biosource in beddict:
+
+        # test if biosource was requested by the user
         if biosource in biosource_ls:
-            atacdict = pickle.load(open(picklepath+genom+"/ATAC-seq/"+biosource+".pickle", "rb"))
-            chipdict = pickle.load(open(picklepath+genom+"/ChIP-seq/"+biosource+".pickle", "rb"))
-            if (biosource not in calculateddict):
-                calculateddict[biosource]={}
-            atac=pyBigWig.open(atacdict)
-            for tf in datadict[biosource]:
+
+            # load dictionarys contaning paths to chip and atac bigwig files
+            atacdict = pickle.load(open(picklepath + genom + "/ATAC-seq/" + biosource + ".pickle", "rb"))
+            chipdict = pickle.load(open(picklepath + genom + "/ChIP-seq/" + biosource + ".pickle", "rb"))
+
+            # generate key for biosource if it does not exist
+            if biosource not in calculateddict:
+                calculateddict[biosource] = {}
+
+            # open atac bigwig
+            atac = pyBigWig.open(atacdict)
+
+            for tf in beddict[biosource]:
+
+                # test if tf was requested by the user
                 if tf in tf_ls:
-                    if (tf not in calculateddict[biosource]):
-                        calculateddict[biosource][tf]={}
-                    chip=pyBigWig.open(chipdict[tf])
-                    for chromosom in datadict[biosource][tf]:
-                        if (chromosom not in calculateddict[biosource][tf]):
-                            calculateddict[biosource][tf][chromosom]=[]
-                        for binding in datadict[biosource][tf][chromosom]:
-                            #print("binding",binding)
+
+                    # generate key for tf if it does not exist
+                    if tf not in calculateddict[biosource]:
+                        calculateddict[biosource][tf] = {}
+
+                    # open chip bigwig for tf
+                    chip = pyBigWig.open(chipdict[tf])
+
+                    for chromosom in beddict[biosource][tf]:
+
+                        # generate key for chromosome if it does not exist
+                        if chromosom not in calculateddict[biosource][tf]:
+                            calculateddict[biosource][tf][chromosom] = []
+
+                        for binding in beddict[biosource][tf][chromosom]:
+
                             start = binding[0]
-                            end= binding[1]
+                            peak = binding[3]
+
+                            # calculate the area to be analyzed
+                            peaklocation = start + peak
+                            peaklocationstart = peaklocation - w
+                            peaklocationend = peaklocation + w
                             calculationls = []
-                            ## call scores between start and end from atac and chip using pyBigWig 
+
+                            # call scores between start and end from atac and chip using pyBigWig
                             if chromosom in chip.chroms() and chromosom in atac.chroms():
-                                calculationls.append(start)
-                                calculationls.append(end)
-                                chip_score=chip.intervals(chromosom,start,end)
-                                atac_score=atac.intervals(chromosom,start,end)
+                                calculationls.append(peaklocationstart)
+                                calculationls.append(peaklocationend)
+                                chip_score = chip.intervals(chromosom, peaklocationstart, peaklocationend)
+                                atac_score = atac.intervals(chromosom, peaklocationstart, peaklocationend)
+
+                                # calculate mean of chip and atac scores
                                 for i in (chip_score, atac_score):
-                                    len=0
-                                    mean=0
+                                    length = 0
+                                    mean = 0
                                     for interval in i:
-                                        if interval[1]>end:
-                                            l=(interval[1]-interval[0])-(interval[1]-end)
+                                        if interval[1] > peaklocationend:
+                                            interval_length = (interval[1] - interval[0]) - (
+                                                        interval[1] - peaklocationend)
                                         else:
-                                            l=interval[1]-interval[0]
-                                        len+=l
-                                        mean+=l*interval[2]
-                                    mean=mean/len
+                                            interval_length = interval[1] - interval[0]
+                                        length += interval_length
+                                        mean += interval_length * interval[2]
+                                    mean = mean / length
                                     calculationls.append(mean)
+
+                                # add scores to dictionary
                                 calculateddict[biosource][tf][chromosom].append(calculationls)
-                        print(chromosom, "done")
-    #print(calculateddict)
+
+            # remove key if the value is empty
+            if calculateddict[biosource]:
+                pass
+            else:
+                del calculateddict[biosource]
+
     return calculateddict
