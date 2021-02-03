@@ -7,16 +7,19 @@ import { ActivatedRoute, Router } from '@angular/router';
   styleUrls: ['./graph-home.component.scss']
 })
 export class GraphHomeComponent implements OnInit {
+  filelist: any
   graphlist: any
   constructor(
     private route: ActivatedRoute,
     private router: Router) { 
-      this.graphlist = this.router.getCurrentNavigation()?.extras.state
+      this.filelist = this.router.getCurrentNavigation()?.extras.state
+      console.log(this.filelist)
+      this.graphlist= this.filelist.filelist["graphs"]
       
   }
 
   ngOnInit(): void {
-    console.log(this.graphlist.graphlist)
+    console.log(this.graphlist)
   }
 
 
