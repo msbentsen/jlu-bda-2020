@@ -11,7 +11,7 @@ def main():
     parameter -g / --genome= : genome
     parameter -b / --biosource= : one or more biosources divided by comma
     parameter -t / --tf= : one or more transcription factors divided by comma
-    parameter -w / --w= : parameter to define the range that will be analyzed (peak+-w)
+    parameter -w / --width= : parameter to define the range that will be analyzed (peak+-w)
     """
 
     # import score, author: Noah
@@ -60,7 +60,7 @@ def main():
     # run the script score.py and store the calculated scores in the dictionary 'scores'
 
     scores = scripts.score.findarea(args.width, args.genome, args.biosource, args.tf)
-   
+
     # test if 'scores' is an empty dictionary
     # if yes, notify that there is no data for the submitted combination of genome, biosource and
     # transcription factor and exit the program
