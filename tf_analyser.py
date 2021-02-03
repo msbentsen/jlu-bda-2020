@@ -43,22 +43,22 @@ def main():
     parser.add_argument('-t', '--tf', default='all', type=str, choices=lt_tfs_choices, nargs='+',
                         help='Allowed values are: \'all\' or \'' + ', '.join(lt_tfs) + '\'',
                         metavar='TF')
-    parser.add_argument('-w', '--w', default=50, type=int,
+    parser.add_argument('-w', '--width', default=50, type=int,
                         help='parameter to define the range that will be analyzed (peak+-w)')
 
-    args = vars(parser.parse_args())
+    args = parser.parse_args()
 
     # test if biosource or tf equals 'all'
     # if yes, set the value to all possible values from the linking_table
-    if 'all' in args['biosource']:
-        args['biosource'] = lt_biosources
+    if 'all' in args.biosource:
+        args.biosource = lt_biosources
 
-    if 'all' in args['tf']:
-        args['tf'] = lt_tfs
+    if 'all' in args.tf:
+        args.tf = lt_tfs
 
     # run the script score.py and store the calculated scores in the dictionary 'scores'
 
-    scores = score.findarea(args['w'], args['genome'], args['biosource'], args['tf'])
+    scores = score.findarea(args.w, args.genome, args.biosource, args.tf)
 
     # test if 'scores' is an empty dictionary
     # if yes, notify that there is no data for the submitted combination of genome, biosource and
