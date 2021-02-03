@@ -25,7 +25,8 @@ def main():
     # read in columns of the linking table that contain the names of the genomes, biosources and transcription factors
     # safe every column in a sets to remove duplicates
     # extra set for biosources and tfs including 'all' used to declare possible choices for the user
-    lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/linking_table.csv'), sep=',', usecols=['genome', 'epigenetic_mark', 'biosample_term_name'])
+    lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/linking_table.csv'), sep=',',
+                     usecols=['genome', 'epigenetic_mark', 'biosample_term_name'])
     lt_genomes = set(lt.values[:, 0])
     lt_tfs = set(lt.values[:, 1][lt.values[:, 1] != 'DNaseI'])
     lt_tfs_choices = set(lt.values[:, 1][lt.values[:, 1] != 'DNaseI'])
@@ -47,7 +48,6 @@ def main():
                         help='parameter to define the range that will be analyzed (peak+-w)')
 
     args = parser.parse_args()
-    print(args)
 
     # test if biosource or tf equals 'all'
     # if yes, set the value to all possible values from the linking_table
@@ -65,12 +65,7 @@ def main():
     # if yes, notify that there is no data for the submitted combination of genome, biosource and
     # transcription factor and exit the program
     if scores:
-        for key in scores.keys():
-            if scores[key]:
-                pass
-            else:
-                print('there is no data for your entered combination of genome, biosource and transcription factor')
-                exit(3)
+        pass
     else:
         print('there is no data for your entered combination of genome, biosource and transcription factor')
         exit(3)
