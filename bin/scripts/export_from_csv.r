@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
-if(!"DeepBlueR" %in% installed.packages()) {
-  install.packages("BiocManager")
-  BiocManager::install("DeepBlueR")
-}
+required_packages <- c("BiocManager","data.table")
+install.packages(setdiff(required_packages,rownames(installed.packages())))
+if(!"DeepBlueR" %in% installed.packages()) BiocManager::install("DeepBlueR")
 library(DeepBlueR)
+library(data.table)
 
 # export_from_csv()
 # Requires csv filename and output directory (with default values)
@@ -51,22 +51,26 @@ export_from_csv <- function(csv_file="linking_table.csv",out_dir="csv_exported")
   
   queued_files <- all_csv_files[!all_csv_files %in% downloaded_files]
   
-  apply(data[1:5],1,function(row) {
-    filename <- row[2]
-    if(filename %in% queued_files) {
-      id = row[1]
-      query_id = deepblue_select_experiments(experiment_name = id, chromosome = extract_chromosome(filename))
-      request_id = deepblue_get_regions(query_id = query_id, output_format = row[3]) # output_format required
-      regions = try(deepblue_download_request_data(request_id),silent=TRUE) # ignore errors when no regions found for this chromosome (this is not unusual)
-      if(class(regions)=="GRanges") {
-        deepblue_export_tab(regions,target.directory=out_dir,file.name=filename)
-        deepblue_export_meta_data(id,target.directory=out_dir,file.name=filename)
+  while(length(queued_files) > 0) {
+    # will loop forever if one or more files repeatedly cause errors
+    apply(data[1:5],1,function(row) {
+      filename <- row[2]
+      if(filename %in% queued_files) {
+        id = row[1]
+        query_id = deepblue_select_experiments(experiment_name = id, chromosome = extract_chromosome(filename))
+        request_id = deepblue_get_regions(query_id = query_id, output_format = row[3]) # output_format required
+        regions = try(deepblue_download_request_data(request_id),silent=TRUE) # ignore errors when no regions found for this chromosome (this is not unusual)
+        if(class(regions)=="GRanges") {
+          deepblue_export_tab(regions,target.directory=out_dir,file.name=filename)
+          deepblue_export_meta_data(id,target.directory=out_dir,file.name=filename)
+        }
+        if(file.exists(paste(out_dir,"/",filename,".txt",sep=""))) {
+          queued_files <<- setdiff(queued_files,filename)
+        }
       }
-      if(file.exists(paste(out_dir,"/",filename,".txt",sep=""))) {
-        queued_files <<- setdiff(queued_files,filename)
-      }
-    }
-  })
+    })
+  }
+  
 }
 
 export_from_csv()
