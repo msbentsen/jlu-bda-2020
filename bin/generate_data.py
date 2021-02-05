@@ -1,7 +1,29 @@
 import subprocess
 import os
+import logging
+from datetime import datetime
 from scripts.merge_reads import merge_all
 from scripts.generate_pickle import parse
+
+
+def setup():
+    """
+    Setup function to be called once. Sets up logging and
+    Ensures proper filestructure is given.
+    """
+    path = os.path.dirname(os.path.abspath(__file__))
+    time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+
+    if not os.path.exists('data/temp'):
+        os.makedirs('data/temp')
+    if not os.path.exists('results'):
+        os.makedirs('results')
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
+    filename = path + "/logs/" + time + "generate_data.log"
+    logging.basicConfig(filename=filename, level=logging.warning)
+    return
 
 
 class data_config:
@@ -16,11 +38,7 @@ class data_config:
 
     def pull_data(self):
         """ Recommended way to use this wrapper. Calls all needed functions.
-        Ensures proper filestructure is given.
         """
-        os.mkdir(self.basepath + "/data/temp")
-        os.mkdir(self.basepath + "/results")
-        os.mkdir(self.basepath + "/logs")
 
         self.generate_csv()
         self.download_data()
@@ -58,7 +76,7 @@ class data_config:
                               self.basepath + "temp/linking_table.csv",
                               self.basepath + "temp"])
         if rc != 0:
-            print("error downloading datafiles")
+            logging.error('Error downloading files:')
 
     def validate_convert_files(self):
         """ Validates filetypes and converts them to requested filetype if needed
