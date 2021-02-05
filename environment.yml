@@ -2,10 +2,14 @@ name: wg1
 channels:
   - bioconda
   - anaconda
+  - conda-forge
 dependencies:
-  #- bioconductor-deepbluer
+  - bioconductor-deepbluer
   - ucsc-bedgraphtobigwig
   - ucsc-bigwigtobedgraph
   - ucsc-bigwigmerge
   - pandas
   - nodejs
+  - flask
+  - flask-restful
+  - flask-cors
