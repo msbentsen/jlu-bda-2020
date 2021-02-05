@@ -3,8 +3,8 @@ required_packages <- c("BiocManager","data.table","argparse")
 install.packages(setdiff(required_packages,rownames(installed.packages())))
 if(!"DeepBlueR" %in% installed.packages()) BiocManager::install("DeepBlueR")
 library(argparse)
-library(DeepBlueR)
 library(data.table)
+suppressPackageStartupMessages(library(DeepBlueR))
 
 parser <- ArgumentParser()
 
@@ -15,14 +15,16 @@ parser$add_argument("-t", "--type", nargs="+", type="character", default="peaks"
                     help="Experiment file types allowed for CHiP-Seq data [default: \"%(default)s\"]")
 parser$add_argument("-m", "--marks", nargs="+", type="character", default=NULL,
                     help="(List of) epigenetic marks (i.e. transcription factors) to include [default: all]")
+parser$add_argument("-o", "--output", type="character", default="linking_table",
+                    help="Output file name without extension [default: \"%(default)s\"]")
 
 args <- parser$parse_args()
 
 # create_linking_table()
-# Takes optional arguments (to be expanded)
+# Takes optional arguments (see above)
 # Creates a csv file built from specific Deepblue data
 
-create_linking_table <- function(genomes,chip_type,chip_marks) {
+create_linking_table <- function(genomes,chip_type,chip_marks,outfile) {
   
   # chrom_in_filename()
   # Expects a vector of filenames (strings) and a vector of chromosomes (strings)
@@ -82,7 +84,7 @@ create_linking_table <- function(genomes,chip_type,chip_marks) {
   
   chrs <- paste("chr",c(1:22,"X","Y"),sep="")
 
-  atac <- deepblue_list_experiments(genome=genomes, technique="ATAC-Seq", type=("signal"), epigenetic_mark="DNA Accessibility")$id
+  atac <- deepblue_list_experiments(genome=genomes, technique="ATAC-Seq", type="signal", epigenetic_mark="DNA Accessibility")$id
   dnase <- deepblue_list_experiments(genome=genomes, technique="DNAse-Seq", epigenetic_mark=c("DNA Accessibility","DNaseI"))$id
   access_experiments <- c(atac,dnase)
   
@@ -127,12 +129,14 @@ create_linking_table <- function(genomes,chip_type,chip_marks) {
   
   csv_data <- rbindlist(c(chip_list,atac_list),fill=TRUE)
   
+  output_file <- paste(outfile,"csv",sep=".")
+  
   if(nrow(csv_data) > 0) {
-    write.csv(csv_data,file="linking_table.csv",na="",row.names=FALSE)
+    write.csv(csv_data,file=output_file,na="",row.names=FALSE)
     # remove newline characters
-    t <- read.csv("linking_table.csv",na.strings = "\n")
-    write.csv(t,file="linking_table.csv",na="",row.names=FALSE)
+    t <- read.csv(file=output_file,na.strings = "\n")
+    write.csv(t,file=output_file,na="",row.names=FALSE)
   }
 }
 
-create_linking_table(args$genomes,args$type,args$marks)
+create_linking_table(args$genomes,args$type,args$marks,args$output)
