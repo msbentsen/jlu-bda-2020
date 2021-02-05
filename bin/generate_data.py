@@ -16,7 +16,12 @@ class data_config:
 
     def pull_data(self):
         """ Recommended way to use this wrapper. Calls all needed functions.
+        Ensures proper filestructure is given.
         """
+        os.mkdir(self.basepath + "/data/temp")
+        os.mkdir(self.basepath + "/results")
+        os.mkdir(self.basepath + "/logs")
+
         self.generate_csv()
         self.download_data()
         self.validate_convert_files()
