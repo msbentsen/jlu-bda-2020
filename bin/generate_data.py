@@ -54,8 +54,9 @@ class data_config:
         Args:
             path (string): current working directory
         """
-        rc = subprocess.call([self.basepath + "/scripts/download.r",
-                              self.basepath + "temp/linking_table.csv"])
+        rc = subprocess.call([self.basepath + "/scripts/export_from_csv.r",
+                              self.basepath + "temp/linking_table.csv",
+                              self.basepath + "temp"])
         if rc != 0:
             print("error downloading datafiles")
 
