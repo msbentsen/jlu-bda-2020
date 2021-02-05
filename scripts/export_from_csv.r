@@ -1,38 +1,33 @@
 #!/usr/bin/env Rscript
-if(!"DeepBlueR" %in% installed.packages()) {
-  install.packages("BiocManager")
-  BiocManager::install("DeepBlueR")
-}
+required_packages <- c("BiocManager","data.table")
+install.packages(setdiff(required_packages,rownames(installed.packages())))
+if(!"DeepBlueR" %in% installed.packages()) BiocManager::install("DeepBlueR")
 library(DeepBlueR)
+library(data.table)
 
-exportFromCsv <- function(csv_file) {
-  
-  out_dir <- "csv_exported"
+# export_from_csv()
+# Requires csv filename and output directory (with default values)
+# Downloads all files listed in the csv that do not exist in the output dir yet
 
-  # How this works: For each experiment and each chromosome, download all regions as a tab-separated text file.
-  # The hg19 and Grch38 genomes contain more than 24 chromosomes, but we only use the common ones.
-  
-  # chrom_in_filename
-  # arguments: filename -> the deepblue filename, chrom -> the current chromosome no. ("chr1")
-  # returns:   filename string where the chromosome no. is inserted at the end but before the file extension (if one is available)
-  
-  chrom_in_filename <- function(filename,chrom) {
-    output <- matrix(data=NA,nrow=length(filename),ncol=length(chrom))
-    for(i in 1:length(filename)) {
-      for(j in 1:length(chrom)) {
-        dots <- strsplit(filename[i],".",fixed=TRUE)[[1]]
-        mylen <- length(dots)
-        if(mylen > 1) {
-          tmp <- dots[mylen]
-          dots[mylen] = chrom[j]
-          dots[mylen+1] = tmp
-          output[i,j] = paste(dots,collapse=".")
-        } else {
-          output[i,j] = paste(filename[i],chrom[j],sep=".")
-        }
-      }
+export_from_csv <- function(csv_file="linking_table.csv",out_dir="csv_exported") {
+
+  # extract_chromosome()
+  # Expects a single filename string
+  # Splits the string by periods and returns second-to-last substring for names with extensions, otherwise the last one
+  # Example:
+  # input:    filename="MS034301.CM.signal_reverse.chr14.bedgraph"
+  # output:   "chr14"
+    
+  extract_chromosome <- function(filename) {
+    mystr <- strsplit(filename,split=".",fixed=TRUE)[[1]]
+    mylen <- length(mystr)
+    if(mylen > 2) {
+      return(mystr[mylen-1])
+    } else if(mylen == 2) {
+      return(mystr[mylen])
+    } else {
+      stop(paste("file",filename,"does not contain \".\" separator"))
     }
-    return(as.vector(t(output)))
   }
   
   if(!dir.exists(out_dir)) {
@@ -42,9 +37,8 @@ exportFromCsv <- function(csv_file) {
   # This section creates a queue of files that need to be downloaded.
   # It starts as the filename column from the csv,
   
-  chrs <- paste("chr",c(1:22,"X","Y"),sep="")
-  data <- read.csv(file=csv_file,header=TRUE)
-  all_csv_files <- chrom_in_filename(data$filename,chrs)
+  data <- fread(file=csv_file,header=TRUE,sep=",",select=c("experiment_id","filename","format"))
+  all_csv_files <- data$filename
   
   # but the script checks whether there are files that have already been
   # downloaded in the output folder. Is this the case, then they are
@@ -52,33 +46,31 @@ exportFromCsv <- function(csv_file) {
   
   all_files <- dir(path=out_dir,pattern=".txt")
   meta_files <- dir(path=out_dir,pattern="meta.txt")
-  downloaded_files <- all_files[!downloaded_files %in% meta_files]
+  downloaded_files <- all_files[!all_files %in% meta_files]
   downloaded_files <- gsub(".txt","",downloaded_files)
   
   queued_files <- all_csv_files[!all_csv_files %in% downloaded_files]
   
-  for(row in 1:nrow(data)) {
-    e = data[row,]
-    name = e$filename
-    for(c in chrs) {
-      filename = chrom_in_filename(name,c)
+  while(length(queued_files) > 0) {
+    # will loop forever if one or more files repeatedly cause errors
+    apply(data[1:5],1,function(row) {
+      filename <- row[2]
       if(filename %in% queued_files) {
-        print(filename)
-        id = e$experiment_id
-        format = e$format
-        query_id = deepblue_select_experiments(experiment_name = name, chromosome = c)
-        request_id = deepblue_get_regions(query_id = query_id, output_format = format) # output_format required
+        id = row[1]
+        query_id = deepblue_select_experiments(experiment_name = id, chromosome = extract_chromosome(filename))
+        request_id = deepblue_get_regions(query_id = query_id, output_format = row[3]) # output_format required
         regions = try(deepblue_download_request_data(request_id),silent=TRUE) # ignore errors when no regions found for this chromosome (this is not unusual)
         if(class(regions)=="GRanges") {
           deepblue_export_tab(regions,target.directory=out_dir,file.name=filename)
           deepblue_export_meta_data(id,target.directory=out_dir,file.name=filename)
         }
         if(file.exists(paste(out_dir,"/",filename,".txt",sep=""))) {
-          queued_files <- setdiff(queued_files,filename)
+          queued_files <<- setdiff(queued_files,filename)
         }
       }
-    }
+    })
   }
+  
 }
 
-exportFromCsv("linking_table.csv")
+export_from_csv()
