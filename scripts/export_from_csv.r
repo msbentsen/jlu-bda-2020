@@ -1,15 +1,25 @@
 #!/usr/bin/env Rscript
-required_packages <- c("BiocManager","data.table")
-install.packages(setdiff(required_packages,rownames(installed.packages())))
+required_packages <- c("BiocManager","data.table","argparse")
+install.packages(setdiff(required_packages,rownames(installed.packages())),repos="http://cran.us.r-project.org")
 if(!"DeepBlueR" %in% installed.packages()) BiocManager::install("DeepBlueR")
-library(DeepBlueR)
+library(argparse)
 library(data.table)
+suppressPackageStartupMessages(library(DeepBlueR))
+
+parser <- ArgumentParser()
+
+parser$add_argument("-i", "--input", type="character", default="linking_table.csv",
+                    help="Input CSV file name with extension [default: \"%(default)s\"]")
+parser$add_argument("-o", "--output", type="character", default="csv_exported",
+                    help="Output directory name [default: \"%(default)s\"]")
+
+args <- parser$parse_args()
 
 # export_from_csv()
 # Requires csv filename and output directory (with default values)
 # Downloads all files listed in the csv that do not exist in the output dir yet
 
-export_from_csv <- function(csv_file="linking_table.csv",out_dir="csv_exported") {
+export_from_csv <- function(csv_file,out_dir) {
 
   # extract_chromosome()
   # Expects a single filename string
@@ -53,9 +63,10 @@ export_from_csv <- function(csv_file="linking_table.csv",out_dir="csv_exported")
   
   while(length(queued_files) > 0) {
     # will loop forever if one or more files repeatedly cause errors
-    apply(data[1:5],1,function(row) {
+    apply(data,1,function(row) {
       filename <- row[2]
       if(filename %in% queued_files) {
+        print(filename)
         id = row[1]
         query_id = deepblue_select_experiments(experiment_name = id, chromosome = extract_chromosome(filename))
         request_id = deepblue_get_regions(query_id = query_id, output_format = row[3]) # output_format required
@@ -73,4 +84,4 @@ export_from_csv <- function(csv_file="linking_table.csv",out_dir="csv_exported")
   
 }
 
-export_from_csv()
+export_from_csv(args$input,args$output)

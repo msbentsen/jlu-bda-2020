@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 required_packages <- c("BiocManager","data.table","argparse")
-install.packages(setdiff(required_packages,rownames(installed.packages())))
+install.packages(setdiff(required_packages,rownames(installed.packages())),repos="http://cran.us.r-project.org")
 if(!"DeepBlueR" %in% installed.packages()) BiocManager::install("DeepBlueR")
 library(argparse)
 library(data.table)
@@ -55,7 +55,6 @@ create_linking_table <- function(genomes,chip_type,chip_marks,outfile) {
   
   new_row <- function(metadata,filename) {
     e <- metadata$`_id`
-    print(e)
     # This function retrieves the metadata for a DeepBlue experiment and converts it into a data.table object
     sample_info <- metadata$sample_info
     extra <- metadata$extra_metadata
@@ -102,30 +101,34 @@ create_linking_table <- function(genomes,chip_type,chip_marks,outfile) {
     metadata <- deepblue_info(c)
     biosource <- metadata$sample_info$biosource_name
     if(biosource %in% atac_biosources) {
+      return_list <- vector("list",length(chrs))
       filenames <- chrom_in_filename(metadata$name,chrs)
-      for(f in filenames) {
-        return(new_row(metadata,f))
+      for(f in 1:length(filenames)) {
+        return_list[[f]] = new_row(metadata,filenames[f])
       }
+      return(return_list)
     } else {
       return(NA)
     }
   })
+  chip_list <- unlist(chip_list[!is.na(chip_list)],recursive = FALSE)
   
-  chip_list <- chip_list[!is.na(chip_list)]
-  
-  chip_biosources <- sapply(chip_list,function(x){ x$biosource })
+  chip_biosources <- unique(sapply(chip_list.old,function(x){ x$biosource }))
   req_biosources <- intersect(atac_biosources,chip_biosources)
   
   # 3rd Step: Add ATAC experiments to csv if biosource has available ChiP data
   
   atac_list <- lapply(atac_metadata,function(m) {
     if(m$sample_info$biosource_name %in% req_biosources) {
+      return_list <- vector("list",length(chrs))
       filenames <- chrom_in_filename(m$name,chrs)
-      for(f in filenames) {
-        return(new_row(m,f))
+      for(f in 1:length(filenames)) {
+        return_list[[f]] = new_row(m,filenames[f])
       }
+      return(return_list)
     }
   })
+  atac_list <- unlist(atac_list[!is.na(atac_list)],recursive = FALSE)
   
   csv_data <- rbindlist(c(chip_list,atac_list),fill=TRUE)
   
