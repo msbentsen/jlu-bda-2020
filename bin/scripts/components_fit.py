@@ -8,28 +8,55 @@ Created on Wed Jan 13 22:08:54 2021
 import numpy as np
 from sklearn.mixture import GaussianMixture
 import matplotlib as plt
-from scipy.stats import gaussian_kde
-import scipy
+from kneed import KneeLocator
 
 class GmFit:
     
     #Generate gaussian distribution
     def normaldist(self, loc, stdw, size):
+        """
+        generate normal distribution by numy.random.normal
+        
+        Parameters
+        ----------
+        loc : location of the normal distribution (X/Y)
+        stdw : standard deviation
+        size : size
+
+        Returns
+        -------
+        ndist : normal distribution 
+        """
         
         ndist = np.random.normal(loc, stdw, size)
         
         return (ndist)
     
     #Make intervalls to compare original distribution with generated distribution
-    def getIntervalls(self, ndist, highscore, components):
+    def getIntervalls(self, ndist, rows, columns):
+        """
+        This Method calculates Intervalls of a distribution. Therefore the size is defined 
+        by rows and columns
+
+        Parameters
+        ----------
+        ndist : Distribution to calculate the intervalls
+        rows : Number of rows
+        columns : Number of columns
+
+        Returns
+        -------
+        intervalls : as 2D array
+
+        """
         
-        if components % components == 0:
-            perlabel = components ** (1/2)
+        if columns % columns == 0:
+            perlabel = columns ** (1/2)
             n_label = int(perlabel)
         else:
             print("n components should not dividable by 2!")
         
-        size = highscore/perlabel
+        size = rows/perlabel
         intervalls = []
         lowX = 0
         lowY = 0
@@ -55,13 +82,30 @@ class GmFit:
         return (intervalls)
     
     #EM algorythmus fit gaussian distributions in given distribution
-    def emAnalyse(self, X_train, n_cgauss):
+    def emAnalyse(self, distribution, n_cgauss):
+        """
+        Method to analyse a distribution via EM-algorythm. Therefore Gaussian 
+        Mixture Models from sklearn is used.
+        
+
+        Parameters
+        ----------
+        distribution : Distribution to be analyzed (numpy array of float64 vectors)
+        n_cgauss : number of gaussian distributions to be fitted (number o components)
+        Returns
+        -------
+        loc : List of locations of the fitted components
+        n_stdwX : List of standard deviations of the x-values
+        n_stdwY : List of standard deviations of the y-values
+        weight : List of the weigts of the fitted components
+
+        """
         
         n_stdwX = []
         n_stdwY = []
         
         gmm = GaussianMixture(n_components=n_cgauss)
-        gmm.fit(X_train)
+        gmm.fit(distribution)
         
         loc = gmm.means_
         covariances = gmm.covariances_
@@ -83,6 +127,26 @@ class GmFit:
     #Mixture Model and original distribution by fitting n components from
     #1 - n_components.
     def getDifference(self, distribution, n_components):
+        """
+        Method ro calculate the space between a input distribution and genaerated 
+        distributiuons. Therefore gaussian distibutions called components, are fit in the original distribution. 
+        The parameters of the componets is then used to generate a new distribution.
+        The new distribution is then compared with the new distribution. To do that 
+        the apce between the original and new distribution is calculated.
+        To evaluate the best fit (number of componets) the latter is repeated for 
+        n = 0 to n = n_components.
+        
+        Parameters
+        ----------
+        distribution : original distribution from ATAC and CHIP data (numpy array of float64 vectors)
+        n_components : max number of components to be fit into the original 
+                       distribution
+
+        Returns
+        -------
+        all_diffs : List of all calculated differences
+
+        """
         
         all_diffs =[]
         size = len(distribution)
@@ -90,10 +154,6 @@ class GmFit:
         for z in range(1, n_components+1):
         
             n_loc, n_stdwX, n_stdwY, n_weights = GmFit().emAnalyse(distribution, n_cgauss=z)
-            # print(n_stdwX)
-            # print(n_stdwY)
-            
-            # GmFit().contourPlot(distribution)
             reference_distX = []
             reference_distY = []
         
@@ -130,18 +190,32 @@ class GmFit:
         return (all_diffs)
         
     #Evaluate number of components
-    def evaluate(self, all_diffs):
-          
-        x = []
+    def evaluate_by_cutoff(self, all_diffs):
+        """
+        Evaluate components from calculated differences from 
+        method getDifference
+        
+        Parameters
+        ----------
+        all_diffs: List of all differences between generated distibutions 
+                   and original distribution.
+
+        Returns
+        -------
+        rates: List of all calculated rates
+        count: evaluated number of components
+        """
+        
+        rates = []
         count = 0
         cutoff= 0
         for i in range(0, len(all_diffs)):
             
-            x.append(all_diffs[0]/all_diffs[i])
+            rates.append(all_diffs[0]/all_diffs[i])
             
-        for j in range(0, len(x)):
+        for j in range(0, len(rates)):
             
-            if x[j]>x[j+1]:
+            if rates[j]>rates[j+1]:
                 cutoff = all_diffs[j]*1.05
                 break
             
@@ -154,24 +228,49 @@ class GmFit:
             if k < cutoff:
                 break
         
-        return (x, count)
+        return (rates, count)
         
         
-    def evaluate_componets(scores_array, max_components):
+    # def evaluate_componets(scores_array, max_components):
         
-        all_diffs = GmFit().getDifference(scores_array, max_components)
+    #     all_diffs = GmFit().getDifference(scores_array, max_components)
         
-        x, count = GmFit().evaluate(all_diffs)
+    #     x, count = GmFit().evaluate(all_diffs)
         
-        return (count)
+    #     return (count)
     
-    
+    def evaluate(self, all_diffs):
+        """
+        Evaluate components from calculated differences from 
+        method getDifference
+
+        Parameters
+        ----------
+        all_diffs : Evaluate components from calculated differences from 
+        method getDifference
+
+        Returns
+        -------
+        n : number of components
+
+        """
+        x = np.arange(1,(len(all_diffs))+1,1)
+        y = all_diffs
+        kneedle = KneeLocator(x, y, S=1.0, curve="convex", direction="decreasing")
+        
+        n = kneedle.knee
+        
+        return n
+        
 
 if __name__ == '__main__':
+    """
+    Testing the script 
+    """
     
     # from TestdataMaker import Testdata_Maker
 
-    n_components = 15
+    n_components = 7
     # #Parameters for the first gaussian distribution:
     # location_ATAC = 50
     # location_CHIP = 50
@@ -266,13 +365,13 @@ if __name__ == '__main__':
     distribution = SC().loadData(path='/home/jan/python-workspace/angewendete_daten_analyse/testsets/calculated_data_3.pickle')
 
     all_diffs = GmFit().getDifference(distribution, n_components)
-    
-    print(all_diffs)
-    x, count = GmFit().evaluate(all_diffs)
+    # k = GmFit().getknee(all_diffs)
+    # print("knee: ")
+    # print(k)
+    count = GmFit().evaluate(all_diffs)
     plt.pyplot.plot(all_diffs)
     dif = np.diff(all_diffs)
     difdif = np.diff(dif)
-    print(x)
     print(count)
     #plt.pyplot.plot(all_diffs)
         

@@ -10,14 +10,47 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 import numpy as np
 from sklearn.mixture import GaussianMixture
-from mpl_toolkits.mplot3d import Axes3D
-
+import os
 
 class VisualizeData:
-    
-        #Make Density Scatter Heatmap
-        def displayDensityScatter(self,scores_array):
         
+        def __init__(self,path,tf_id):
+            """
+            Initialize variables and set up directory if necessary
+
+            Parameters
+            ----------
+            path : TYPE
+                DESCRIPTION.
+            tf_id : TYPE
+                DESCRIPTION.
+
+            Returns
+            -------
+            None.
+
+            """
+            
+            self.path_plots = (os.path.join(path, 'plots')) + "/" + tf_id
+            try:
+                os.makedirs(self.path_plots)
+            except:
+                pass
+            
+        #Make Density Scatter Heatmap
+        def displayDensityScatter(self,scores_array, tf_id):
+            """
+            Method to illustrate distribution via Density Scatter(Heat-Map)
+
+            Parameters
+            ----------
+            scores_array : 2D array of vectors
+
+            Returns
+            -------
+            Path.
+
+            """
             x = []
             y = []
             
@@ -35,25 +68,34 @@ class VisualizeData:
             # Calculate the point density
             xy = np.vstack([x,y])
             z = gaussian_kde(xy)(xy)
-        
-            # Sort the points by density, so that the densest points are plotted last
-            # idx = z.argsort()
-            
-            # x, y, z = x[idx], y[idx], z[idx]
             
             fig, ax = plt.subplots()
             ax.scatter(x, y, c=z, s=50, edgecolors='face')
             
-            ax.set(xlim=(0,60), ylim=(0,14))
+            ax.set(xlim=(0,100), ylim=(0,100))
             plt.xlabel("ATAC")
             plt.ylabel("Chip")
-            #plt.colorbar()
-            
+            # plt.colorbar()
+            figure_path = self.path_plots + "/DensityScatter_" + tf_id + ".png"
+            plt.savefig(figure_path)
             plt.show()
+            
+            return self.path_plots
         
         #Make contourPlot
-        def contourPlot(self, scores_array, n_cgauss):
-        
+        def contourPlot(self, scores_array, n_cgauss, tf_id):
+            """
+            Method to display distribution via contour-plot
+
+            Parameters
+            ----------
+            scores_array : 2D array of vectors
+            n_cgauss : number of componets for a Gasussian Mixture Model
+            Returns
+            -------
+            None.
+
+            """
             x = []
             y = []
             
@@ -80,10 +122,27 @@ class VisualizeData:
             ax = fig.gca(projection='3d')
             ax.plot_trisurf(x, y, z, cmap=plt.cm.coolwarm, linewidth=1, antialiased=False)
             # ax.plot_surface(x, y, z, color='b')
+            figure_path = self.path_plots + "/Contour_" + tf_id + ".png"
+            plt.savefig(figure_path)
+            
             plt.show()
             
         #Make altitude Plot
-        def altitudePlot(self, data, n_cgauss):
+        def altitudePlot(self, data, n_cgauss, tf_id):
+            """
+            Method to display a distribution via altitude-plot. Lines for altitude 
+            measurments.
+
+            Parameters
+            ----------
+            data : 2D array of vectors 
+            n_cgauss : number of components 
+
+            Returns
+            -------
+            None.
+
+            """
         
             gmm = GaussianMixture(n_components=n_cgauss)
             gmm.fit(data)
@@ -97,3 +156,6 @@ class VisualizeData:
             plt.scatter(data[:,0], data[:,1])
             
             plt.show()
+            
+            figure_path = self.path_plots + "/Altitude_" + tf_id + ".png"
+            plt.savefig(figure_path)

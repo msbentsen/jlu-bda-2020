@@ -32,21 +32,21 @@ class LoadPickle:
                     
             return count        
             
-        # def getallScores(self, datadict):
+        def getallScores(self, datadict):
         
-        #     scoresarray = []
+            scoresarray = []
             
-        #     biosource = list(datadict.values())[0]
+            biosource = list(datadict.values())[0]
                 
-        #     tf = list(biosource.values())[1]
+            tf = list(biosource.values())[1]
                 
-        #     for chromosome in tf.values():
+            for chromosome in tf.values():
                 
-        #         for array in chromosome:
+                for array in chromosome:
 
-        #                 scoresarray.append([array[-1], array[-2]])
+                        scoresarray.append([array[-1], array[-2]])
                         
-        #     return (scoresarray)
+            return (scoresarray)
         
         
         
