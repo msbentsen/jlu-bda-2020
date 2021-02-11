@@ -5,10 +5,10 @@ Created on Thu Jan 28 17:40:57 2021
 
 @author: jan
 """
-from repository import Repository
-from components_fit import GmFit
-from visualize_data import VisualizeData as VD
-from ema import EMA
+from scripts.repository import Repository
+from scripts.components_fit import GmFit
+from scripts.visualize_data import VisualizeData as VD
+from scripts.ema import EMA
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
