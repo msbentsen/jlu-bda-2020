@@ -8,7 +8,7 @@ Dies ist eine temporäre Skriptdatei.
 import pickle
 import pyBigWig
 import os
-import scripts.Repository
+import scripts.repository
 
 
 def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
@@ -19,8 +19,8 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
     beddict = pickle.load(open(picklepath + genom + "/bed.pickle", "rb"))
     calculateddict = {}
 
-    result_csv = scripts.Repository.Repository().read_csv(
-        filename=os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts", "result/result.csv"))
+    result_csv = scripts.repository.Repository().read_csv(
+        filename=os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts", "results/result.csv"))
 
     # go through beddict for each biosource, then each tf, then each chromosom, then every binding
     # get Peak and Area from beddict and calculate the scores
