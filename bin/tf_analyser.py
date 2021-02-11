@@ -12,6 +12,7 @@ def main():
     parameter -b / --biosource= : one or more biosources divided by comma
     parameter -t / --tf= : one or more transcription factors divided by comma
     parameter -w / --width= : parameter to define the range that will be analyzed (peak+-w)
+    parameter -r / --redo_analysis= : if set to True, the analysis will be done for existing results
     """
 
     # import score, author: Noah
@@ -38,14 +39,18 @@ def main():
     # parse arguments submitted by the user
     parser = argparse.ArgumentParser(description='Analysis of transcription factors')
     parser.add_argument('-g', '--genome', default='hg19', type=str, choices=lt_genomes,
-                        help='Allowed values are: \'' + ', '.join(lt_genomes) + '\'', metavar='GENOME')
+                        help='Allowed values are genomes from \'deepbluer\'. You already downloaded the following '
+                             'genomes: ' + ', '.join(lt_genomes), metavar='GENOME')
     parser.add_argument('-b', '--biosource', default='all', type=str, choices=lt_biosources_choices, nargs='+',
-                        help='Allowed values are: \'all\' or \'' + ', '.join(lt_biosources) + '\'', metavar='BIOSOURCE')
+                        help='Allowed values are \'all\' or biosources from \'deepbluer\'. You already downloaded the '
+                             'following biosources: ' + ', '.join(lt_biosources), metavar='BIOSOURCE')
     parser.add_argument('-t', '--tf', default='all', type=str, choices=lt_tfs_choices, nargs='+',
-                        help='Allowed values are: \'all\' or \'' + ', '.join(lt_tfs) + '\'',
-                        metavar='TF')
+                        help='Allowed values are \'all\' or TFs from \'deepbluer\'. You already downloaded the '
+                             'following TFs:' + ', '.join(lt_tfs), metavar='TF')
     parser.add_argument('-w', '--width', default=50, type=int,
                         help='parameter to define the range that will be analyzed (peak+-w)')
+    parser.add_argument('-r', '--redo_analysis', default=False, type=bool, const=True, nargs='?',
+                        help='existing results will be executed again and overwritten if argument is submitted')
 
     args = parser.parse_args()
 
@@ -59,20 +64,23 @@ def main():
 
     # run the script score.py and store the calculated scores in the dictionary 'scores'
 
-    scores = scripts.score.findarea(args.width, args.genome, args.biosource, args.tf)
+    scores, exist = scripts.score.findarea(args.width, args.genome, args.biosource, args.tf, args.redo_analysis)
 
     # test if 'scores' is an empty dictionary
-    # if yes, notify that there is no data for the submitted combination of genome, biosource and
+    # if not, generate plots with the script analyse_main.py
+    # if yes and exist is True, pass (the plots are already exist in result)
+    # if yes and exist is False, notify that there is no data for the submitted combination of genome, biosource and
     # transcription factor and exit the program
     if scores:
+        resultframe = scripts.analyse_main.Main().mainloop(data=scores, genome=args.genome)
+        print(resultframe)
+
+    elif exist:
         pass
+
     else:
         print('there is no data for your entered combination of genome, biosource and transcription factor')
         exit(3)
-
-    # generate plots with the script analyse_main.py
-    resultframe = scripts.analyse_main.Main().mainloop(data=scores)
-    print(resultframe)
 
 
 if __name__ == '__main__':
