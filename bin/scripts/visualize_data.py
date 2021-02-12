@@ -76,8 +76,8 @@ class VisualizeData:
             plt.xlabel("ATAC")
             plt.ylabel("Chip")
             # plt.colorbar()
-            figure_path = self.path_plots + "/DensityScatter_" + tf_id + ".png"
-            plt.savefig(figure_path)
+            figure_path = self.path_plots + "/DensityScatter_" + tf_id + ".svg"
+            plt.savefig(figure_path, format="svg")
             plt.show()
             
             return self.path_plots
@@ -122,8 +122,8 @@ class VisualizeData:
             ax = fig.gca(projection='3d')
             ax.plot_trisurf(x, y, z, cmap=plt.cm.coolwarm, linewidth=1, antialiased=False)
             # ax.plot_surface(x, y, z, color='b')
-            figure_path = self.path_plots + "/Contour_" + tf_id + ".png"
-            plt.savefig(figure_path)
+            figure_path = self.path_plots + "/Contour_" + tf_id + ".svg"
+            plt.savefig(figure_path, format="svg")
             
             plt.show()
             
@@ -157,5 +157,5 @@ class VisualizeData:
             
             plt.show()
             
-            figure_path = self.path_plots + "/Altitude_" + tf_id + ".png"
-            plt.savefig(figure_path)
+            figure_path = self.path_plots + "/Altitude_" + tf_id + ".svg"
+            plt.savefig(figure_path, format="svg")
