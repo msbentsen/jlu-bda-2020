@@ -18,6 +18,7 @@ source_path=$2
 csv_path=$3
 
 new_link=$source_path/linking.csv
+touch "$new_link"
 export new_filename=""
 
 
@@ -67,7 +68,7 @@ convert_file() {
 	local file_name=${1%.*}
 	if [ "$2" == "bigwig" ] | [ "$2" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
-			cut --fields 1-3,7 "$source_path/$1" > "$source_path/$file_name.bedgraph"
+			cut --fields 1-3,7 "$1" > "$file_name.bedgraph"
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
@@ -75,7 +76,7 @@ convert_file() {
 				"$source_path/$3.chrom.sizes" "$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
-		fi
+	fi
 	fi
 }
 
@@ -84,7 +85,7 @@ convert_file() {
 # Goes through all lines of the .csv and validates the file before attempting
 # to convert it to the proper filetype
 #===============================================================================
-while IFS="," read -r experiment_id	genome	biosource	technique	\
+while IFS=";" read -r experiment_id	genome	biosource	technique	\
 	epigenetic_mark	filename	data_type	format remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
@@ -94,6 +95,7 @@ do
 	source_file="$source_path/$filename"
     validate_filetype "$filename" "$format"
 	if [[ $? != "0" ]]; then
+		mv "$source_file" "$source_path/$new_filename"
 	 	source_file="$source_path/$new_filename"
 	fi
 	convert_file "$source_file" "$filetype" "$genome"
@@ -103,4 +105,4 @@ do
 	>> "$new_link"
 done < <(tail --lines +2 "$csv_path")
 
-mv "$new_link" "$source_path/linking_table2.csv"
+mv "$new_link" "$source_path/linking_table.csv"
