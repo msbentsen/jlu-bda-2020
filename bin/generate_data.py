@@ -76,9 +76,9 @@ class DataConfig:
         Args:
             path (string): current working directory
         """
-        rc = subprocess.call([self.basepath + "/scripts/export_from_csv.r", "-i",
-                              self.basepath + "temp/linking_table.csv", "-o",
-                              self.basepath + "temp"])
+        rc = subprocess.call([self.basepath + "/scripts/export_from_csv.r",
+                              "-i", self.basepath + "/data/linking_table.csv",
+                              "-o", self.basepath + "/data/temp"])
         if rc != 0:
             logging.error('Error downloading files:')
 
@@ -92,7 +92,9 @@ class DataConfig:
             filetype (string): filetype to convert to (currently only .bw)
         """
         rc = subprocess.call(
-            [self.basepath + "/scripts/convert_files.sh", "bigwig", self.basepath + "/temp"])
+            [self.basepath + "/scripts/convert_files.sh", "bigwig",
+             self.basepath + "/data/temp",
+             self.basepath + "/data/linking_table.csv"])
         if rc != 0:
             print("error converting datafiles ")
 
