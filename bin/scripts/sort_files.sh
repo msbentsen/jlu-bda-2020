@@ -1,4 +1,4 @@
-#!/bin/bin/env bash
+#!/bin/env bash
 
 #===============================================================================
 #
@@ -38,9 +38,9 @@ do
 
 	if [ "$technique" == "ATAC-Seq" ]; then
 		new_path="$dest_path/$biosource/$technique"
-	elif [ "$technique" == "ChIP-seq" ]; then
+	elif [ "$technique" == "chip-seq" ]; then
 		new_path="$dest_path/$biosource/$technique/$epigenetic_mark"
-	elif [ "$technique" == "DNase-seq" ]; then
+	elif [ "$technique" == "dnase-seq" ]; then
 		new_path="$dest_path/$biosource/$technique"
 	else
 		echo "error, invalid sequencing technique for file $filename"

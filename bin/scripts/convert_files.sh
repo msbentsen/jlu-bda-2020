@@ -1,4 +1,4 @@
-#!/bin/bin/env bash
+#!/bin/env bash
 
 #===============================================================================
 #
@@ -28,8 +28,8 @@ export new_filename=""
 #  $1 = filename of the file to check
 #  $2 = format of the filecontent
 #===============================================================================
-validate_file () {
-	local file_extension=${$1##*.}
+validate_filetype () {
+	local file_extension=${1##*.}
 	local filetype
 	case "$2" in
 	"CHROMOSOME,START,END,VALUE")
@@ -48,7 +48,7 @@ validate_file () {
 	esac
 	if [ "$filetype" != "$file_extension" ]; then
 		new_filename=$(basename "$1")
-		new_filename="${$new_filename%.*}.$filetype"
+		new_filename="${new_filename%.*}.$filetype"
 		return 1
 	fi
 	return 0
@@ -62,9 +62,9 @@ validate_file () {
 #  §2 = filetype to convert to
 #  $3 = genome of the filecontent, needed for chrom.sizes
 #=============================================================	==================
-convert_files() {
-	local file_extension=${$1##*.}
-	local file_name=${$1%.*}
+convert_file() {
+	local file_extension=${1##*.}
+	local file_name=${1%.*}
 	if [ "$2" == "bigwig" ] | [ "$2" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
 			cut --fields 1-3,7 "$source_path/$1" > "$source_path/$file_name.bedgraph"
@@ -85,21 +85,22 @@ convert_files() {
 # to convert it to the proper filetype
 #===============================================================================
 while IFS="," read -r experiment_id	genome	biosource	technique	\
-	epigenetic_mark	filename	data_type	format	remaining
+	epigenetic_mark	filename	data_type	format remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
 	fi
 
 	source_file="$source_path/$filename"
-	if [[ "$(validate_filetype "$filename" "$format")" != "0" ]]; then
-	 filename=$new_filename
+    validate_filetype "$filename" "$format"
+	if [[ $? != "0" ]]; then
+	 	source_file="$source_path/$new_filename"
 	fi
 	convert_file "$source_file" "$filetype" "$genome"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
-	,$epigenetic_mark,$filename,$data_type,$format,$remaining"\
+	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$csv_path")
 
-mv "$new_link" "$source_path/linking_table.csv"
+mv "$new_link" "$source_path/linking_table2.csv"
