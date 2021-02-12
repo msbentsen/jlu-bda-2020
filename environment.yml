@@ -1,7 +1,6 @@
 name: wg1
 channels:
   - bioconda
-  - anaconda
   - conda-forge
 dependencies:
   - bioconductor-deepbluer
