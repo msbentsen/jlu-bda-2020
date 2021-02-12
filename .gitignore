@@ -1,1 +1,6 @@
 .vscode
+bin/__pycache__
+bin/scripts/__pycache__
+logs
+data
+results
