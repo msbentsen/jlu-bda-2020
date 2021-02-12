@@ -16,6 +16,7 @@
 filetype=$1
 source_path=$2
 csv_path=$3
+chrom_path=$4
 
 new_link=$source_path/linking.csv
 touch "$new_link"
@@ -73,7 +74,7 @@ convert_file() {
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
 			./tools/bedGraphToBigWig "$file_name.$file_extension" \
-				"$source_path/$3.chrom.sizes" "$file_name.bw"
+				"$4/$3.chrom.sizes" "$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 	fi
@@ -98,7 +99,7 @@ do
 		mv "$source_file" "$source_path/$new_filename"
 	 	source_file="$source_path/$new_filename"
 	fi
-	convert_file "$source_file" "$filetype" "$genome"
+	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
 	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\

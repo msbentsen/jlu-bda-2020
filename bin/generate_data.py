@@ -94,7 +94,8 @@ class DataConfig:
         rc = subprocess.call(
             [self.basepath + "/scripts/convert_files.sh", "bigwig",
              self.basepath + "/data/temp",
-             self.basepath + "/data/linking_table.csv"])
+             self.basepath + "/data/linking_table.csv",
+             self.basepath + "/data/chromsizes"])
         if rc != 0:
             print("error converting datafiles ")
 
