@@ -9,13 +9,19 @@ import { AngularDemoComponent } from './angular-demo/angular-demo.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
+import { GraphBiosourceComponent } from './graph-biosource/graph-biosource.component';
+import { GraphTfComponent } from './graph-tf/graph-tf.component';
+import { SingleTfComponent } from './single-tf/single-tf.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
     GraphHomeComponent,
-    AngularDemoComponent
+    AngularDemoComponent,
+    GraphBiosourceComponent,
+    GraphTfComponent,
+    SingleTfComponent
   ],
   imports: [
     BrowserModule,

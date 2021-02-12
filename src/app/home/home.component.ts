@@ -8,8 +8,8 @@ import { NavigationExtras, Router } from '@angular/router';
 })
 export class HomeComponent implements OnInit {
 
-  private graphlist: any
-
+  public graphlist: any
+  
   constructor(
     private router: Router
     ) { }
@@ -18,10 +18,11 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
   }
+  
   readfile(){
     return new Promise(resolve =>{
     var rawFile = new XMLHttpRequest();
-    rawFile.open("GET", "http://localhost:5000/Test/test", false)
+    rawFile.open("GET", "http://localhost:5000/getGraphls", false)
     rawFile.onload = function(){
       var res = rawFile.response
       var resolvedJSON = JSON.parse(res)
@@ -41,6 +42,7 @@ export class HomeComponent implements OnInit {
       }
     }
     console.log(navigationExtras)
+    console.log(this.graphlist)
     this.router.navigate(["/graph_home"], navigationExtras)
     })
      

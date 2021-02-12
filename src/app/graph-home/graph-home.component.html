@@ -1,4 +1,12 @@
 <p>graph-home works!</p>
-<div *ngFor="let graphs of graphlist, index as i">
-    <h2>{{graphs}} - NAME</h2>
+<div *ngFor="let biosources of graphlist, index as i">
+    {{biosources[0]}} -- Biosource
+    <br>
+    <div *ngFor="let tfs of biosources[1], index as i">
+        {{tfs[0]}} -- tf
+        <br>
+        {{tfs[1]}} -- path
+    </div>
+    
 </div>
+<button mat-button color="primary" (click)="goToResults()">See Results for selected Sources</button>
