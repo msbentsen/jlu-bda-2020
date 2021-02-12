@@ -19,8 +19,11 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
     beddict = pickle.load(open(picklepath + genom + "/bed.pickle", "rb"))
     calculateddict = {}
 
-    result_csv = scripts.repository.Repository().read_csv(
-        filename=os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts", "results/result.csv"))
+    try:
+        result_csv = scripts.repository.Repository().read_csv(
+            filename=os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts", "results/result.csv"))
+    except FileNotFoundError:
+        result_csv = None
 
     # go through beddict for each biosource, then each tf, then each chromosom, then every binding
     # get Peak and Area from beddict and calculate the scores
@@ -43,7 +46,7 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
             for tf in beddict[biosource]:
 
                 # test if result for biosource-tf already exists
-                if len(result_csv.loc[(result_csv['biosource'] == biosource) & (
+                if result_csv is not None and len(result_csv.loc[(result_csv['biosource'] == biosource) & (
                         result_csv['tf'] == tf)]) > 0 and not redo_analysis:
                     exist = True
 
