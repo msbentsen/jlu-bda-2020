@@ -11,7 +11,8 @@ def setup():
     Setup function to be called once. Sets up logging and
     Ensures proper filestructure is given.
     """
-    path = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), os.path.pardir))
     time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 
     if not os.path.exists('data/temp'):
@@ -21,20 +22,21 @@ def setup():
     if not os.path.exists('logs'):
         os.makedirs('logs')
 
-    filename = path + "/logs/" + time + "generate_data.log"
-    logging.basicConfig(filename=filename, level=logging.warning)
+    filename = path + "/logs/" + time + "_generate_data.log"
+    logging.basicConfig(filename=filename, level=logging.INFO)
     return
 
 
-class data_config:
+class DataConfig:
     """Contains configuration data for the pull_data function.    """
 
-    def __init__(self, genome, biosource, epigenetic_mark, filetype):
+    def __init__(self, genome, biosource, epigenetic_mark):
         self.genome = genome
         self.biosource = biosource
         self.epigenetic_mark = epigenetic_mark
         self.basepath = os.path.dirname(os.path.abspath(__file__))
-        self.filetype = filetype
+        logging.info(self.genome + " " + self.biosource +
+                     " " + self.epigenetic_mark)
 
     def pull_data(self):
         """ Recommended way to use this wrapper. Calls all needed functions.
@@ -60,7 +62,9 @@ class data_config:
             epigenetic_mark (string list): requested epigenetic marks
         """
         rc = subprocess.call(
-            [self.basepath + "/scripts/csv.r", self.biosource, self.genome, self.epigenetic_mark])
+            [self.basepath + "/scripts/csv.r", "-b", self.biosource,
+             "-g", self.genome,
+             "-m", self.epigenetic_mark])
         if rc != 0:
             print("error generating .csv")
 
@@ -72,8 +76,8 @@ class data_config:
         Args:
             path (string): current working directory
         """
-        rc = subprocess.call([self.basepath + "/scripts/export_from_csv.r",
-                              self.basepath + "temp/linking_table.csv",
+        rc = subprocess.call([self.basepath + "/scripts/export_from_csv.r", "-i",
+                              self.basepath + "temp/linking_table.csv", "-o",
                               self.basepath + "temp"])
         if rc != 0:
             logging.error('Error downloading files:')
