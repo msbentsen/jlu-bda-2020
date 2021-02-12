@@ -32,9 +32,10 @@ class DataConfig:
 
     def __init__(self, genome, biosource, epigenetic_mark):
         self.genome = genome
-        self.biosource = biosource
-        self.epigenetic_mark = epigenetic_mark
-        self.basepath = os.path.dirname(os.path.abspath(__file__))
+        self.biosource = " ".join(biosource)
+        self.epigenetic_mark = " ".join(epigenetic_mark)
+        self.basepath = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), os.path.pardir))
         logging.info(self.genome + " " + self.biosource +
                      " " + self.epigenetic_mark)
 
@@ -62,7 +63,7 @@ class DataConfig:
             epigenetic_mark (string list): requested epigenetic marks
         """
         rc = subprocess.call(
-            [self.basepath + "/scripts/csv.r", "-b", self.biosource,
+            [self.basepath + "/bin/scripts/csv.r", "-b", self.biosource,
              "-g", self.genome,
              "-m", self.epigenetic_mark])
         if rc != 0:
@@ -76,9 +77,11 @@ class DataConfig:
         Args:
             path (string): current working directory
         """
-        rc = subprocess.call([self.basepath + "/scripts/export_from_csv.r",
-                              "-i", self.basepath + "/data/linking_table.csv",
-                              "-o", self.basepath + "/data/temp"])
+        logging.info("csv: " + self.basepath + "/data/linking_table.csv")
+        logging.info("temp: " + self.basepath + "/data/temp")
+        rc = subprocess.call([self.basepath + "/bin/scripts/export_from_csv.r", "-i",
+                              self.basepath + "/data/linking_table.csv", "-o",
+                              self.basepath + "/data/temp"])
         if rc != 0:
             logging.error('Error downloading files:')
 
@@ -92,10 +95,7 @@ class DataConfig:
             filetype (string): filetype to convert to (currently only .bw)
         """
         rc = subprocess.call(
-            [self.basepath + "/scripts/convert_files.sh", "bigwig",
-             self.basepath + "/data/temp",
-             self.basepath + "/data/linking_table.csv",
-             self.basepath + "/data/chromsizes"])
+            ["bash", self.basepath + "/bin/scripts/convert_files.sh", "bigwig", self.basepath + "/data/temp"])
         if rc != 0:
             print("error converting datafiles ")
 
@@ -118,7 +118,9 @@ class DataConfig:
             path (string): current working directory
         """
         rc = subprocess.call(
-            [self.basepath + "/scripts/sort_files.sh", self.basepath])
+            ["bash", self.basepath + "/bin/scripts/sort_files.sh",
+            self.basepath + "/data/temp/", self.basepath + "/data",
+            self.basepath + "/data/linking_table.csv"])
         if rc != 0:
             print("error sorting datafiles")
 
