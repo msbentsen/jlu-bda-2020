@@ -12,6 +12,9 @@ import {MatButtonModule} from '@angular/material/button';
 import { GraphBiosourceComponent } from './graph-biosource/graph-biosource.component';
 import { GraphTfComponent } from './graph-tf/graph-tf.component';
 import { SingleTfComponent } from './single-tf/single-tf.component';
+import {MatTreeModule} from '@angular/material/tree';
+import { MatIconModule} from '@angular/material/icon'
+
 
 @NgModule({
   declarations: [
@@ -28,7 +31,9 @@ import { SingleTfComponent } from './single-tf/single-tf.component';
     AppRoutingModule,
     BrowserAnimationsModule,
     MatCardModule,
-    MatButtonModule
+    MatButtonModule,
+    MatTreeModule,
+    MatIconModule
   ],
   providers: [],
   bootstrap: [AppComponent]

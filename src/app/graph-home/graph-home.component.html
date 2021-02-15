@@ -1,4 +1,4 @@
-<p>graph-home works!</p>
+<!--<p>graph-home works!</p>
 <div *ngFor="let biosources of graphlist, index as i">
     {{biosources[0]}} -- Biosource
     <br>
@@ -9,4 +9,28 @@
     </div>
     
 </div>
+-->
+<mat-tree [dataSource]="nestedDataSource" [treeControl]="nestedTreeControl" class="example-tree">
+    <mat-tree-node *matTreeNodeDef = "let node">
+        <li>
+            {{node.item}}
+        </li>
+    </mat-tree-node>
+
+    <mat-nested-tree-node *matTreeNodeDef = "let node; when hasNestedChild">
+        <li>
+            <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'toggle' + node.item">
+                <mat-icon class="mat-icon-rtl-mirror">
+                    {{nestedTreeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                </mat-icon>
+            </button>
+            {{node.item}}
+            <ul [class.example-tree-invisible]="!nestedTreeControl.isExpanded(node)">
+                <ng-container matTreeNodeOutlet></ng-container>
+            </ul>
+        </li>
+    </mat-nested-tree-node>
+</mat-tree>
+
+
 <button mat-button color="primary" (click)="goToResults()">See Results for selected Sources</button>
