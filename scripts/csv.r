@@ -16,7 +16,7 @@ parser$add_argument("-b", "--biosources", nargs="+", type="character", default=N
                     help="(List of) biosources to include [default: all] (Refer to: https://deepblue.mpi-inf.mpg.de/)")
 parser$add_argument("-t", "--type", nargs="+", type="character", default="peaks", choices=c("peaks","signal"),
                     help="Experiment file types allowed for CHiP-Seq data [default: \"%(default)s\"]")
-parser$add_argument("-a", "--atactype", nargs="+", type="character", default=c("peaks","signal"), choices=c("peaks","signal"),
+parser$add_argument("-a", "--atactype", nargs="+", type="character", default="signal", choices=c("peaks","signal"),
                     help="Experiment file types allowed for ATAC/DNAse-Seq data [default: \"%(default)s\"]")
 parser$add_argument("-m", "--marks", nargs="+", type="character", default=NULL,
                     help="(List of) epigenetic marks (i.e. transcription factors) to include [default: all] (Refer to: https://deepblue.mpi-inf.mpg.de/)")
@@ -62,7 +62,6 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
   }
   
   new_row <- function(metadata,filename) {
-    print(filename)
     e <- metadata$`_id`
     # This function retrieves the metadata for a DeepBlue experiment and converts it into a data.table object
     sample_info <- metadata$sample_info
@@ -70,9 +69,9 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
     meta <- data.table(
       experiment_id=e,
       genome=metadata$genome,
-      biosource=metadata$sample_info$biosource_name,
+      biosource=tolower(metadata$sample_info$biosource_name),
       technique=tolower(metadata$technique),
-      epigenetic_mark=metadata$epigenetic_mark,
+      epigenetic_mark=tolower(metadata$epigenetic_mark),
       filename,
       data_type=metadata$data_type,
       format=metadata$format,
@@ -93,7 +92,8 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
   
   if(!is.null(filter_biosources)) {
     # check whether biosources given by the user are valid
-    all_biosources <- deepblue_list_biosources()$name
+    filter_biosources <- sapply(filter_biosources,tolower,USE.NAMES = FALSE)
+    all_biosources <- sapply(deepblue_list_biosources()$name,tolower,USE.NAMES = FALSE)
     removed_biosources <- filter_biosources[!filter_biosources %in% all_biosources]
     n_removed <- length(removed_biosources)
     if(n_removed>0) warning(paste("dropped",n_removed,"biosource(s):",paste(removed_biosources,collapse=", ")))
@@ -104,9 +104,10 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
     rm(all_biosources)
   }
 
-  tf_marks <- deepblue_list_epigenetic_marks(extra_metadata = list(category="Transcription Factor Binding Sites"))$name
+  tf_marks <- sapply(deepblue_list_epigenetic_marks(extra_metadata = list(category="Transcription Factor Binding Sites"))$name,tolower,USE.NAMES = FALSE)
   
   if(!is.null(chip_marks)) {
+    chip_marks <- sapply(chip_marks,tolower,USE.NAMES = FALSE)
     removed_marks <- chip_marks[!chip_marks %in% tf_marks]
     n_removed <- length(removed_marks)
     if(n_removed>0) warning(paste("dropped",n_removed,"tf(s):",paste(removed_marks,collapse=", ")))
@@ -138,7 +139,7 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
       warning(paste(genome,"No ATAC-seq data available for given arguments",sep=": "))
     } else {
       atac_metadata <- lapply(access_experiments,function(x){ deepblue_info(x) })
-      atac_biosources <- unique(sapply(atac_metadata,function(x) { x$sample_info$biosource_name }))
+      atac_biosources <- unique(sapply(atac_metadata,function(x) { tolower(x$sample_info$biosource_name) }))
       
       # 2nd Step: Collect ChiP experiments and add to csv list if biosource has available ATAC data
       
@@ -150,7 +151,9 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
         chip_list <- lapply(chips,function(c) {
           metadata <- deepblue_info(c)
           return_list <- vector("list",length(chrs))
-          filenames <- chrom_in_filename(metadata$name,chrs)
+          name <- metadata$name
+          message(name)
+          filenames <- chrom_in_filename(name,chrs)
           return_list <- lapply(filenames,function(f) { new_row(metadata,f) })
           return(return_list)
         })
@@ -166,7 +169,9 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
         atac_list <- lapply(atac_metadata,function(m) {
           if(m$sample_info$biosource_name %in% chip_biosources) {
             return_list <- vector("list",length(chrs))
-            filenames <- chrom_in_filename(m$name,chrs)
+            name <- m$name
+            message(name)
+            filenames <- chrom_in_filename(name,chrs)
             return_list <- lapply(filenames,function(f) { new_row(m,f) })
             return(return_list)
           } else {
@@ -188,10 +193,8 @@ create_linking_table <- function(genomes,chrs,filter_biosources,chip_type,atac_t
     stop("No data available for CSV")
   } else {
     csv_data <- unlist(csv_data,recursive=FALSE) # flatten genome lists into one list
-    write.csv(csv_data,file=output_file,na="",row.names=FALSE)
-    # remove newline characters
-    t <- read.csv(file=output_file,na.strings = "\n")
-    write.csv(t,file=output_file,na="",row.names=FALSE)
+    write.table(csv_data,file=output_file,na="",row.names=FALSE,sep=";")
+    message(paste(length(csv_data[[1]]),"lines written to",output_file))
   }
 }
 
