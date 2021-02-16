@@ -103,6 +103,6 @@ do
 	echo "$experiment_id,$genome,$biosource,$technique	\
 	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
 	>> "$new_link"
-done < <(tail --lines +2 "$csv_path")
+done < <(tail --lines +2 "$source_path/linking_table.csv")
 
 mv "$new_link" "$source_path/linking_table.csv"

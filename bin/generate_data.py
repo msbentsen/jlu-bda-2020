@@ -35,7 +35,7 @@ class DataConfig:
         self.biosource = " ".join(biosource)
         self.epigenetic_mark = " ".join(epigenetic_mark)
         self.basepath = os.path.abspath(os.path.join(
-                os.path.dirname(__file__), os.path.pardir))
+            os.path.dirname(__file__), os.path.pardir))
         logging.info(self.genome + " " + self.biosource +
                      " " + self.epigenetic_mark)
 
@@ -95,7 +95,8 @@ class DataConfig:
             filetype (string): filetype to convert to (currently only .bw)
         """
         rc = subprocess.call(
-            ["bash", self.basepath + "/bin/scripts/convert_files.sh", "bigwig", self.basepath + "/data/temp"])
+            ["bash", self.basepath + "/bin/scripts/convert_files.sh", "bigwig",
+             self.basepath + "/data/temp", self.basepath + "/data/chromsizes"])
         if rc != 0:
             print("error converting datafiles ")
 
@@ -119,8 +120,8 @@ class DataConfig:
         """
         rc = subprocess.call(
             ["bash", self.basepath + "/bin/scripts/sort_files.sh",
-            self.basepath + "/data/temp/", self.basepath + "/data",
-            self.basepath + "/data/linking_table.csv"])
+             self.basepath + "/data/temp/", self.basepath + "/data",
+             self.basepath + "/data/linking_table.csv"])
         if rc != 0:
             print("error sorting datafiles")
 
