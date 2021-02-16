@@ -12,9 +12,17 @@
 -->
 <mat-tree [dataSource]="nestedDataSource" [treeControl]="nestedTreeControl" class="example-tree">
     <mat-tree-node *matTreeNodeDef = "let node">
+        
         <li>
-            {{node.item}}
+            <button mat-icon-button disabled></button>
+            <mat-checkbox
+                
+                [(ngModel)] = "node.checked"
+                (ngModelChange) = "updateAllChecked(node)"
+            >{{node.item}}</mat-checkbox>
+            
         </li>
+        
     </mat-tree-node>
 
     <mat-nested-tree-node *matTreeNodeDef = "let node; when hasNestedChild">
@@ -24,7 +32,12 @@
                     {{nestedTreeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                 </mat-icon>
             </button>
-            {{node.item}}
+            <mat-checkbox 
+                (change) = "checkAll(node)"
+                [(ngModel)] = "node.checked"
+                [indeterminate] = "someChecked(node)"
+            >{{node.item}}</mat-checkbox>
+            <button mat-icon-button disabled></button>
             <ul [class.example-tree-invisible]="!nestedTreeControl.isExpanded(node)">
                 <ng-container matTreeNodeOutlet></ng-container>
             </ul>
@@ -33,4 +46,4 @@
 </mat-tree>
 
 
-<button mat-button color="primary" (click)="goToResults()">See Results for selected Sources</button>
+<button mat-button class="card-button" color="primary" (click)="goToResults()">See Results for selected Sources</button>

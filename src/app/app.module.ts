@@ -13,7 +13,9 @@ import { GraphBiosourceComponent } from './graph-biosource/graph-biosource.compo
 import { GraphTfComponent } from './graph-tf/graph-tf.component';
 import { SingleTfComponent } from './single-tf/single-tf.component';
 import {MatTreeModule} from '@angular/material/tree';
-import { MatIconModule} from '@angular/material/icon'
+import { MatIconModule} from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { FormsModule } from '@angular/forms'
 
 
 @NgModule({
@@ -33,7 +35,9 @@ import { MatIconModule} from '@angular/material/icon'
     MatCardModule,
     MatButtonModule,
     MatTreeModule,
-    MatIconModule
+    MatIconModule,
+    MatCheckboxModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

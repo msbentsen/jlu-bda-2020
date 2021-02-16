@@ -9,6 +9,8 @@ import { BehaviorSubject, Observable, of as observableOf } from 'rxjs';
 export class TFItemNode {
   item: string;
   type: string;
+  belongsTo: string;
+  checked: boolean;
   children: TFItemNode[];
 }
 
@@ -52,19 +54,23 @@ export class GraphHomeComponent implements OnInit {
       //Data from API
       [
         {
-          item: "Biosource 1", 
+          item: "Biosource1", 
           type:"",
+          belongsTo: "",
+          checked: false,
           children: [
-            {item: "TF1",type:"tf", children: []},
-            {item: "TF2",type:"tf", children: []}
+            {item: "TF1",type:"tf",belongsTo: "Biosource1",checked: false, children: []},
+            {item: "TF2",type:"tf",belongsTo: "Biosource1",checked: false, children: []}
           ]
         },
         {
-          item: "Biosource 2", 
+          item: "Biosource2", 
           type:"",
+          belongsTo: "",
+          checked: false,
           children: [
-            {item: "TF1",type:"tf", children: []},
-            {item: "TF2",type:"tf", children: []}
+            {item: "TF1",type:"tf",belongsTo: "Biosource2",checked: false, children: []},
+            {item: "TF2",type:"tf",belongsTo: "Biosource2",checked: false, children: []}
           ]
         }
       ]
@@ -75,11 +81,42 @@ export class GraphHomeComponent implements OnInit {
 
   hasNestedChild = (_: number, nodeData: TFItemNode) => {return !(nodeData.type)}
 
+
   ngOnInit(): void {
-    console.log(this.graphData)
-  }
-  goToResults(){
-    this.router.navigate(["/graph_biosource"])
   }
 
+  goToResults(){
+    console.log(this.nestedDataSource.data)
+    //this.router.navigate(["/graph_biosource"])
+  }
+
+  updateAllChecked(node:TFItemNode){
+    console.log(node)
+    this.nestedDataSource.data.forEach(element => {
+      if (element.item == node.belongsTo){
+        element.checked = element.children.every(t => t.checked == true)
+      }
+    })
+  }
+
+  checkAll(node:TFItemNode){
+
+    console.log(node)
+    if (node.checked){
+    node.children.forEach(element => {
+      element.checked = true
+      console.log(element)
+      });
+    } else {
+      node.children.forEach(element => {
+        element.checked = false
+        console.log(element)
+        });
+  }
+    //node.children.forEach(tf => tf.checked = true)
+  }
+
+  someChecked(node:TFItemNode): boolean{
+    return node.children.filter(tf => tf.checked).length > 0 && !node.checked
+  }
 }
