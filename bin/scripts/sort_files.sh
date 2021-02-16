@@ -29,7 +29,7 @@ echo "${headers:0:77}filepath,${headers:77}" > "$new_link"
 # sequencing technique, skipping non existing files to clean up the .csv .
 #===============================================================================
 
-while IFS="," read -r experiment_id	genome	biosource	technique	\
+while IFS=";" read -r experiment_id	genome	biosource	technique	\
 	epigenetic_mark	filename	data_type	remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then

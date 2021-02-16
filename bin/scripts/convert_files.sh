@@ -5,7 +5,7 @@
 #  FILE:  convert.sh
 #
 #  USAGE:  convert.sh [filetype to convert to]
-#					[path to files] [csv_path]
+#					[path to files] [chrom_path]
 #
 #  DESCRIPTION:  Validate and convert  files in src_path according to the
 #				parameters. At the same time ensure proper file-naming.
@@ -15,8 +15,7 @@
 #===============================================================================
 filetype=$1
 source_path=$2
-csv_path=$3
-chrom_path=$4
+chrom_path=$3
 
 new_link=$source_path/linking.csv
 touch "$new_link"
@@ -94,8 +93,8 @@ do
 	fi
 
 	source_file="$source_path/$filename"
-    validate_filetype "$filename" "$format"
-	if [[ $? != "0" ]]; then
+
+	if validate_filetype "$filename" "$format"; then
 		mv "$source_file" "$source_path/$new_filename"
 	 	source_file="$source_path/$new_filename"
 	fi
