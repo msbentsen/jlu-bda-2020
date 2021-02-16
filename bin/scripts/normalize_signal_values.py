@@ -30,39 +30,49 @@ import os
 import pandas as pd
 
 
-def normalize_all(linkage_table_path):
+def normalize_all(linkage_table_new_path, linkage_table_old_path=""):
     """
     Method normalizes all files through log scaling first and then
     min-max scaling to a uniform range between 0 and 1.
 
-    :param linkage_table_path: String with path to linkage table .csv file
+    :param linkage_table_new_path: String with path to linkage table .csv
+    file with files downloaded in current run
+    :param linkage_table_old_path: String with path to linkage table .csv
+    file with files downloaded in previous runs. If this file does not yet
+    exist because there have been no previous runs it can be left with
+    default value
     """
-    linkage_table = pd.read_csv(linkage_table_path)
-    min = math.Inf
-    max = -math.Inf
+    linkage_table_new = pd.read_csv(linkage_table_new_path)
+    linkage_table_old = linkage_table_old_path if linkage_table_old_path == \
+                        "" else pd.read_csv(linkage_table_old_path)
+    min = math.inf
+    max = -math.inf
+    log_file_paths = []
 
 
 def log_scale_file(file_path, column_names):
     """
-    Method reads in all signal values contained in a file and returns them
-    for further processing.
+    Method takes a file and writes a new file from it, which is a copy of the
+    old one but with log scaled signal values and the new file ending .log.
 
     :param file_path: String of path to file to be read in
     :param column_names: List of Strings with column names in file
+    :return: log_file_path: String containing path to log-scaled file
     """
-    tmp_file_path = file_path.rsplit("/", maxsplit=1)[0] + "/" + "tmp_file.txt"
+    log_file_path = file_path + ".log"
     idx = get_value_index(column_names)
 
-    with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
+    with open(file_path, 'r') as file, open(log_file_path, 'w') as tmp_file:
         for line in file:
             line_split = line.strip().split("\t")
-            x = math.log(float(line_split[idx]))
+            x = 0 if float(line_split[idx]) == 0.0 else math.log(float(
+                line_split[idx]))
             line_split[idx] = str(x)
             line_split.append("\n")
             line_write = "\t".join(line_split)
             tmp_file.write(line_write)
 
-    os.rename(tmp_file_path, file_path)
+    return log_file_path
 
 
 def get_min_max(file_path, min, max, column_names):
@@ -96,6 +106,7 @@ def min_max_scale_file(file_path, column_names, min, max):
     :param column_names: List of strings with names of columns in file
     """
     tmp_file_path = file_path.rsplit("/", maxsplit=1)[0] + "/" + "tmp_file.txt"
+    file_path_new = file_path.rsplit(".", maxsplit=1)[0]
     idx = get_value_index(column_names)
 
     with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
@@ -107,7 +118,7 @@ def min_max_scale_file(file_path, column_names, min, max):
             line_write = "\t".join(line_split)
             tmp_file.write(line_write)
 
-    os.rename(tmp_file_path, file_path)
+    os.rename(tmp_file_path, file_path_new)
 
 
 def get_value_index(column_names):
