@@ -1,22 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import {MatButtonModule} from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { HomeComponent } from '../home/home.component';
-import { NestedTreeControl} from '@angular/cdk/tree';
-import {MatTreeFlattener, MatTreeFlatDataSource, MatTreeNestedDataSource} from '@angular/material/tree';
+import { NestedTreeControl } from '@angular/cdk/tree';
+import { MatTreeFlattener, MatTreeFlatDataSource, MatTreeNestedDataSource } from '@angular/material/tree';
 import { BehaviorSubject, Observable, of as observableOf } from 'rxjs';
+import { FlaskApiService, TFItemNode } from '../service/flask-api.service';
 
-export class TFItemNode {
-  item: string;
-  type: string;
-  belongsTo: string;
-  checked: boolean;
-  children: TFItemNode[];
-}
+
 
 const Tree_data = {
   Biosource: {
-    "one": ["tf1","tf2"],
+    "one": ["tf1", "tf2"],
     "two": ["tf1", "tf2"]
   }
 }
@@ -40,19 +35,25 @@ export class GraphHomeComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    ) { 
-      this.filelist = this.router.getCurrentNavigation()?.extras.state
-      this.graphData= this.filelist.filelist["data"]
-      
+    private api_service: FlaskApiService
+  ) {
+    this.api_service.setTreeData().then(() => {
+      console.log("from service", this.api_service.Tree_Data.value)
 
-    this.nestedTreeControl= new NestedTreeControl<TFItemNode>(this._getChildren)
-    this.nestedDataSource = new MatTreeNestedDataSource()
 
-    this.dataChange.subscribe(data => this.nestedDataSource.data = data)
+      console.log(this.api_service.Tree_Data.value)
+      //this.filelist = this.router.getCurrentNavigation()?.extras.state
+      //this.graphData= this.filelist.filelist["data"]
 
-    this.dataChange.next(
-      //Data from API
-      [
+
+      this.nestedTreeControl = new NestedTreeControl<TFItemNode>(this._getChildren)
+      this.nestedDataSource = new MatTreeNestedDataSource()
+
+      this.api_service.Tree_Data.subscribe(data => this.nestedDataSource.data = data)
+      //this.dataChange.next(this.api_service.Tree_Data.value)
+
+      //Data from API --> Datastructure: 
+      /*[
         {
           item: "Biosource1", 
           type:"",
@@ -73,50 +74,58 @@ export class GraphHomeComponent implements OnInit {
             {item: "TF2",type:"tf",belongsTo: "Biosource2",checked: false, children: []}
           ]
         }
-      ]
-    )
+      ]*/
+
+
+
+    })
   }
 
-  private _getChildren = (node: TFItemNode ) => { return observableOf(node.children)}
+  private _getChildren = (node: TFItemNode) => { return observableOf(node.children) }
 
-  hasNestedChild = (_: number, nodeData: TFItemNode) => {return !(nodeData.type)}
+  hasNestedChild = (_: number, nodeData: TFItemNode) => { return !(nodeData.type) }
 
 
   ngOnInit(): void {
+
   }
 
-  goToResults(){
-    console.log(this.nestedDataSource.data)
+  goToResults() {
+    //console.log(this.nestedDataSource.data)
+    //console.log(this.api_service.Tree_Data.value)
+    //this.api_service.Tree_Data.next(this.nestedDataSource.data)
+    this.api_service.setPathList().then(() =>{
+      console.log(this.api_service.Viszalization_Data.value)
+    })
     //this.router.navigate(["/graph_biosource"])
   }
 
-  updateAllChecked(node:TFItemNode){
+  updateAllChecked(node: TFItemNode) {
     console.log(node)
     this.nestedDataSource.data.forEach(element => {
-      if (element.item == node.belongsTo){
+      if (element.item == node.belongsTo) {
         element.checked = element.children.every(t => t.checked == true)
       }
     })
   }
 
-  checkAll(node:TFItemNode){
+  checkAll(node: TFItemNode) {
 
     console.log(node)
-    if (node.checked){
-    node.children.forEach(element => {
-      element.checked = true
-      console.log(element)
+    if (node.checked) {
+      node.children.forEach(element => {
+        element.checked = true
+        console.log(element)
       });
     } else {
       node.children.forEach(element => {
         element.checked = false
         console.log(element)
-        });
-  }
-    //node.children.forEach(tf => tf.checked = true)
+      });
+    }
   }
 
-  someChecked(node:TFItemNode): boolean{
+  someChecked(node: TFItemNode): boolean {
     return node.children.filter(tf => tf.checked).length > 0 && !node.checked
   }
 }

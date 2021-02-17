@@ -16,6 +16,7 @@ import {MatTreeModule} from '@angular/material/tree';
 import { MatIconModule} from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms'
+import { FlaskApiService } from './service/flask-api.service';
 
 
 @NgModule({
@@ -39,7 +40,7 @@ import { FormsModule } from '@angular/forms'
     MatCheckboxModule,
     FormsModule
   ],
-  providers: [],
+  providers: [FlaskApiService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
