@@ -1,42 +1,37 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 29 14:18:16 2021
+Created on Wed Feb 17 16:32:30 2021
 
 @author: Spyro
 """
 
-from flask import  send_from_directory, Flask, abort
-from flask_restful import Api, Resource
+# import main Flask class and request object
+from flask import Flask, request
 from flask_cors import CORS, cross_origin
-
-
-import os
-
-import sys
 import api_calls
 
+# create the Flask app
 app = Flask(__name__)
-api = Api(app)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-@app.route("/")
-@cross_origin()
 
-def heyWelt():
-    return "Hello cross origin world"
+@app.route('/getTreeData', methods=["GET"])
+def getTreeData():
+    result_dict_cp = {"data":[{'item': 'GM12878', 'type': '', 'belongsTo': '', 'checked': False, 'children': [{'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}, {'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}, {'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}, {'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}, {'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}, {'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}, {'item': 'ATF2_ENCFF210HTZ', 'type': 'tf', 'belongsTo': 'GM12878', 'checked': False, 'children': []}]}]}
+    #return api_calls.get_biosource_list_for_tree()
+    return result_dict_cp
 
-class Visualization(Resource):
+@app.route('/getGraphPaths', methods=["POST"])
+def getGraphPaths():
+    request_data = request.get_json()
+    #data = {"data": request_data, "hey": "there"}
+    
+    return api_calls.getPathList(request_data)
 
-    def get(self, action):
-        if action == "getGraphls":
-            result_dict = {"data":[["biosource_name1",[["tf_name1","path1"], ["tf_name2","path2"]]],["biosource_name2",[["tf_name1","path1"], ["tf_name2","path2"]]]]}
-                                 #[['GM12878', [['ARID3A_ENCFF003VDB', '0'], ['ARID3A_ENCFF003VDB', '1']]],['GMNEXT', [['ARID3A_ENCFF003VDB', '0'], ['ARID3A_ENCFF003VDB', '1']]] ]
-            #return api_scripts.parse_result_csv()
-            return result_dict
+@app.route('/json-example')
+def json_example():
+    return 'JSON Object Example'
 
-api.add_resource(Visualization, "/<string:action>")
-
-
-if __name__ == "__main__":
-
-    app.run(debug=True)
+if __name__ == '__main__':
+    # run app in debug mode on port 5000
+    app.run(debug=True, port=5000)
