@@ -5,7 +5,7 @@
 #  FILE:  convert.sh
 #
 #  USAGE:  convert.sh [filetype to convert to]
-#					[path to files] [chrom_path]
+#					[path to files] [genome.chrom.size folder path]
 #
 #  DESCRIPTION:  Validate and convert  files in src_path according to the
 #				parameters. At the same time ensure proper file-naming.
@@ -76,7 +76,7 @@ convert_file() {
 				"$4/$3.chrom.sizes" "$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
-	fi
+		fi
 	fi
 }
 
@@ -105,4 +105,5 @@ do
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/linking_table.csv")
 
+#replace out of date linking table with up to date one
 mv "$new_link" "$source_path/linking_table.csv"
