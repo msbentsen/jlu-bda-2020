@@ -8,7 +8,10 @@
 #
 #  DESCRIPTION:  Sort files in data into a folderstructure in the destination
 #				according to the parameters in the csv table, At the same time
-#				adds the new filepath and cleans up the .csv
+#				adds the new filepath and cleans up the .csv. Files that do not
+# 				exist anymore are deleted out of the .csv, this should only
+#				affect the merging of forward/reverse reads, since those files
+#				are only needed in the merged form.
 #
 #  NOTES:  ---
 #  AUTHOR:  Jonathan Schäfer
@@ -36,16 +39,7 @@ do
 		continue
 	fi
 
-	if [ "$technique" == "ATAC-Seq" ]; then
-		new_path="$dest_path/$biosource/$technique"
-	elif [ "$technique" == "chip-seq" ]; then
-		new_path="$dest_path/$biosource/$technique/$epigenetic_mark"
-	elif [ "$technique" == "dnase-seq" ]; then
-		new_path="$dest_path/$biosource/$technique"
-	else
-		echo "error, invalid sequencing technique for file $filename"
-		exit 1
-	fi
+	new_path="$dest_path/$genome/$biosource/$technique/$epigenetic_mark"
 
 	mkdir -p "$new_path"
 	sourcefile="$source_path/$filename"
