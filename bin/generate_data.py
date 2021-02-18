@@ -95,7 +95,7 @@ class DataConfig:
         indir = os.path.join(self.outpath, "data", "temp")
 
         rc = subprocess.call(
-            [tool, "bigwig", indir, self.chromsizes])
+            [tool, "bigwig", indir, self.chromsizes, self.csvname])
         if rc != 0:
             print("error converting datafiles ")
 
@@ -121,10 +121,10 @@ class DataConfig:
         tool = os.path.join(self.binpath, "scripts", "sort_files.r")
         outdir = os.path.join(self.outpath, "data")
         indir = os.path.join(outdir, "temp")
-        csv = os.path.join(outdir, self.csvname)
+        csv = os.path.join(indir, self.csvname)
 
         rc = subprocess.call(
-            [tool, indir, outdir, csv])
+            [tool, indir, outdir, csv, self.csvname])
         if rc != 0:
             print("error sorting datafiles")
 

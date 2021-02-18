@@ -20,8 +20,8 @@
 source_path=$1
 dest_path=$2
 csv_path=$3
-
-new_link=$dest_path/linking_table.csv
+csv_name=$4
+new_link=$dest_path/$csv_name
 
 headers=$(head -n1 "$csv_path")
 echo "${headers:0:77}filepath,${headers:77}" > "$new_link"

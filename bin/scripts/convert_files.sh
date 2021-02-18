@@ -4,8 +4,8 @@
 #
 #  FILE:  convert.sh
 #
-#  USAGE:  convert.sh [filetype to convert to]
-#					[path to files] [genome.chrom.size folder path]
+#  USAGE:  convert.sh [filetype to convert to] [path to files]
+#					  [genome.chrom.size folder path] [name of csv]
 #
 #  DESCRIPTION:  Validate and convert  files in src_path according to the
 #				parameters. At the same time ensure proper file-naming.
@@ -16,8 +16,9 @@
 filetype=$1
 source_path=$2
 chrom_path=$3
+csv_name=$4
 
-new_link=$source_path/linking.csv
+new_link=$source_path/$csv_name.new
 touch "$new_link"
 export new_filename=""
 
@@ -72,7 +73,7 @@ convert_file() {
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
-			./tools/bedGraphToBigWig "$file_name.$file_extension" \
+			bedGraphToBigWig "$file_name.$file_extension" \
 				"$4/$3.chrom.sizes" "$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
@@ -103,7 +104,7 @@ do
 	echo "$experiment_id,$genome,$biosource,$technique	\
 	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
 	>> "$new_link"
-done < <(tail --lines +2 "$source_path/linking_table.csv")
+done < <(tail --lines +2 "$source_path/$csv_name")
 
 #replace out of date linking table with up to date one
-mv "$new_link" "$source_path/linking_table.csv"
+mv "$new_link" "$source_path/$csv_name"
