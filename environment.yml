@@ -1,0 +1,16 @@
+name: wg1
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - r-base
+  - r-data.table
+  - bioconductor-deepbluer
+  - ucsc-bedgraphtobigwig
+  - ucsc-bigwigtobedgraph
+  - ucsc-bigwigmerge
+  - pandas
+  - nodejs
+  - flask
+  - flask-restful
+  - flask-cors
