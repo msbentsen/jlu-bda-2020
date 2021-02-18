@@ -5,12 +5,12 @@ Methods for merging reverse/forward reads in ATAC-seq data.
 Goes through the following workflow:
 
 - Reads in linkage_table.csv and identifies all ATAC-seq files with
-  forwar/reverse reads that need merging
+  forward/reverse reads that need merging
 - Groups them into pairs to be merged
 - Checks if file format is bigWig, if not converts files to bigWig
 - Merges files
 - Checks if bedGraph is an allowed format since that is the output format of
-  merging tool, if not files are converted back to bigWig
+  merging tool, if not files are converted to bigWig
 - Deletes all files that are no longer needed
 - Adds entries for merged files to linkage_table.csv
 
@@ -20,7 +20,7 @@ Use as follows:
     import merge_reads
 
     merge_reads.merge_all(linkage_table_path, chrom_sizes_paths,
-    conversion_tool_path, merge_tool_path)
+    conversion_tool_path, merge_tool_path, allowed_file_formats)
 
 
 by Kristina Müller (kmlr81)
@@ -32,11 +32,11 @@ import pandas as pd
 
 
 def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
-              merge_tool_path):
+              merge_tool_path, allowed_file_formats):
     """
     Method merges all forward/reverse ATAC-seq files after converting them to
     bigWig format if necessary, checks if merged files need to be converted
-    to bigWig and does so if true, then deletes old files nad adds entires for
+    to bigWig and does so if true, then deletes old files nad adds entries for
     new files to the linkage table .csv file.
 
     :param linkage_table_path: String containing path to linking_table.csv
@@ -44,60 +44,104 @@ def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
            chrom.sizes files
     :param conversion_tool_path: String with path to bedGraphToBigWig tool
     :param merge_tool_path: String with path to bigWigMerge tool
+    :param allowed_file_formats: List of Strings with allowed file formats
     """
 
     linkage_frame = read_linkage_table(linkage_table_path)
     pairs = find_pairs(linkage_frame)
-    column_names = linkage_frame.columns
 
-    old_files = []
+    # Get column names of linkage table in correct order
+    # (linkage_frame.columns returns column names ordered alphabetically
+    # which messes up the order when a new line is appended to the file later)
+    with open(linkage_table_path) as lf:
+        first_line = lf.readline().strip()
+
+    column_names = first_line.split(",")
+
+
+    pairs_merge =[]
+    converted_idxs = []
     merged_files = []
+    old_files = []
     rows = []
 
-    #If file format of forward/reverse reads is bedGrapfh, then convert to
-    #bigWig for merging tool and save paths of pre-conversion files to be
-    #deleted later
-    for pair in pairs:
-        for i in range(0, len(pair)):
-            if ".begraph" in pair[i].lower():
+    # If file format of forward/reverse reads is bedGraph, then convert to
+    # bigWig for merging tool and make new pairs_merge List with only bigWig
+    # file paths for merging
+    for h in range(0, len(pairs)):
+        tmp_pair = []
+        for i in range(0, len(pairs[h])):
+            if ".bedgraph" in pairs[h][i].lower():
                 genome = linkage_frame.loc[linkage_frame["file_path"] ==
-                                           pair[i]]["genome"]
-                #Find the right chrom.sizes file for genome
-                chrom_sizes = [el for el in chrom_sizes_paths if genome in el]
-                bw_file_path = convert_bedgraph_to_bigwig(pair[i],
+                                           pairs[h][i]]["genome"]
+                # Find the right chrom.sizes file for genome
+                chrom_sizes = [el for el in chrom_sizes_paths if
+                               genome[genome.keys()[0]] in el]
+                bw_file_path = convert_bedgraph_to_bigwig(pairs[h][i],
                                                           chrom_sizes[0],
                                                           conversion_tool_path)
-                old_files.append(pair[i])
-                pair[i] = bw_file_path
+                tmp_pair.append(bw_file_path)
+                converted_idxs.append([h,i])
+            else:
+                tmp_pair.append(pairs[h][i])
+        pairs_merge.append(tmp_pair)
 
-    #Merge all file pairs with tool and save paths to new files
-    for pair in pairs:
+    # Merge all file pairs with tool and save paths to new files
+    for pair in pairs_merge:
         merged_files.append(merge_pair(pair[0], pair[1], merge_tool_path))
 
-    #add option to convert merged files to bigWig format
+    # add option to convert merged files to bigWig format
+    allowed_file_formats = [file_format.lower() for file_format in
+                            allowed_file_formats]
+    if "bedgraph" not in allowed_file_formats:
+        tmp_paths = []
+        for j in range(0, len(merged_files)):
+            genome = linkage_frame.loc[linkage_frame["file_path"] ==
+                                       pairs[j][0]]["genome"]
+            chrom_sizes = [el for el in chrom_sizes_paths if
+                           genome[genome.keys()[0]] in el]
+            bw_file_path = convert_bedgraph_to_bigwig(merged_files[j],
+                                                      chrom_sizes[0],
+                                                      conversion_tool_path)
+            tmp_paths.append(bw_file_path)
+            old_files.append(merged_files[j])
+        merged_files = tmp_paths
 
-    #Check if there are any file paths saved from having converted
-    #forward/reverse files to bigWig, if so delete them
+    # Check if there are any bedGraph merged files that were converted to
+    # bigWig and delete them since they are no longer needed
     if len(old_files) > 0:
         for file in old_files:
             delete_file(file)
 
-    #Delete all forward/reverse files in bigWig format now that they have
-    #been merged
+    # Delete all forward/reverse files in bedGraph format now that they have
+    # been converted to bigWig
     for pair in pairs:
-        for i in range(0, len(pair)):
-            delete_file(pair[i])
+        for k in range(0, len(pair)):
+            delete_file(pair[k])
 
-    #Generate rows to append to linkage table .csv file for merged files
-    for i in range(0, len(merged_files)):
-        row = linkage_frame.loc[linkage_frame["file_path"] == pairs[i][0]]
-        row["file_path"] = merged_files[i]
-        row = row.to_csv()
-        rows.append(row)
+    # Delete all forward/reverse files in bigWig format now that they have
+    # been merged
+    for idx_pair in converted_idxs:
+        delete_file(pairs_merge[idx_pair[0]][idx_pair[1]])
 
-    #add merged file entries to linkage table
-    #Problem: The column values of the rows are added in the wrong order
-    #Still needs fixing
+
+    # Generate rows to append to linkage table .csv file for merged files
+    for m in range(0, len(merged_files)):
+        row = linkage_frame.loc[linkage_frame["file_path"] ==
+                                     pairs[m][0]]
+        row_dict = row.to_dict()
+
+        # Dictionary needs re-formatting since the initial structure is
+        # 'colname as key: Random int (?) as key: row value as value' but the
+        # structure needed is 'colname as key: row value as value'
+        for key in row_dict.keys():
+            row_dict[key] = row_dict[key][list(row_dict[key].keys())[0]]
+
+        row_dict["file_path"] = merged_files[m]
+        row_dict["filename"] = merged_files[m].rsplit("/", maxsplit=1)[-1]
+        rows.append(row_dict)
+
+    # add merged file entries to linkage table
     for row in rows:
         add_row(row, linkage_table_path, column_names)
 
@@ -135,8 +179,8 @@ def find_pairs(linkage_frame):
 
     :param linkage_frame: Data frame containing all important info for files
                           to be merged
-    :return: paris: A list of tuples containing the file paths to the two
-                    files that need to be merged with each other
+    :return: paris: A list of two dimensional lists containing the file paths to
+                    the two files that need to be merged with each other
     """
 
     pairs = []
@@ -156,11 +200,11 @@ def find_pairs(linkage_frame):
                     linkage_frame["file_path"][j]:
                 if len(chrom) > 0:
                     if chrom in linkage_frame["file_path"][j]:
-                        pairs.append((linkage_frame["file_path"][i],
-                                      linkage_frame["file_path"][j]))
+                        pairs.append([linkage_frame["file_path"][i],
+                                      linkage_frame["file_path"][j]])
                 else:
-                    pairs.append((linkage_frame["file_path"][i],
-                                  linkage_frame["file_path"][j]))
+                    pairs.append([linkage_frame["file_path"][i],
+                                  linkage_frame["file_path"][j]])
 
     return pairs
 
@@ -176,10 +220,10 @@ def convert_bedgraph_to_bigwig(bg_file_path, chrom_sizes_path,
     :return: Path to new bigWig file
     """
 
-    bw_file_path = "\"" + bg_file_path.rsplit(".", maxsplit=1)[0] + ".bw\""
+    bw_file_path = bg_file_path.rsplit(".", maxsplit=1)[0] + ".bw"
 
-    command = conversion_tool_path + " \"" + bg_file_path + "\" " + \
-              chrom_sizes_path + " " + bw_file_path
+    command = conversion_tool_path + " \"" + bg_file_path + "\" \"" + \
+              chrom_sizes_path + "\" \"" + bw_file_path + "\""
 
     os.system(command)
 
@@ -196,11 +240,10 @@ def merge_pair(bw_file_path_1, bw_file_path_2, merge_tool_path):
     :return: Path to new merged file
     """
 
-    merged_file_path = "\"" + bw_file_path_1.split("_")[0] + \
-                       "_merged.bedGraph\""
+    merged_file_path = bw_file_path_1.split("_")[0] + "_merged.bedGraph"
 
     command = merge_tool_path + " \"" + bw_file_path_1 + "\" \"" + \
-              bw_file_path_2 + "\" " + merged_file_path
+              bw_file_path_2 + "\" \"" + merged_file_path + "\""
 
     os.system(command)
 
@@ -225,7 +268,7 @@ def add_row(merged_file_row, linkage_table_path, column_names):
     :param merged_file_row: Dictionary with column names as keys and column
                             values as values representing one row
     :param linkage_table_path: String containing path to linkage table .csv file
-    :param column_names: List of Strings with column names
+    :param column_names: List of Strings with column names in correct order
     """
 
     with open(linkage_table_path, 'a') as file:
