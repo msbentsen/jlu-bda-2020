@@ -49,26 +49,31 @@ def main():
 
     # links to deepbluer for possible genomes, biosources and tfs
     # given to the user if script is called with -h / --help
-    genomelink='\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_genomes.php/\aDeepBlueR\x1b]8;;\a'
-    biosourcelink='\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_biosources.php/\aDeepBlueR\x1b]8;;\a'
-    tflink='\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_epigenetic_marks.php/\aDeepBlueR\x1b]8;;\a'
+    genomelink = '\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_genomes.php/\aDeepBlueR' \
+                 '\x1b]8;;\a '
+    biosourcelink = '\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_biosources.php' \
+                    '/\aDeepBlueR\x1b]8;;\a '
+    tflink = '\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_epigenetic_marks.php' \
+             '/\aDeepBlueR\x1b]8;;\a '
 
     # parse arguments submitted by the user
-    parser = argparse.ArgumentParser(description='Analysis of transcription factors', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Analysis of transcription factors',
+                                     formatter_class=RawTextHelpFormatter)
     parser.add_argument('-g', '--genome', default='hg19', type=str,
-                        help='Allowd values are genome names from\n'
+                        help='Allowed values are genome names from\n'
                              + genomelink + '\n'
-                             'You already downloaded the following genomes:\n' + ', '.join(lt_genomes),
+                                            'You already downloaded the following genomes:\n' + ', '.join(lt_genomes),
                         metavar='GENOME')
     parser.add_argument('-b', '--biosource', default=['all'], type=str, nargs='+',
                         help='Allowed values are \'all\', \'downloaded\' or biosources from\n'
                              + biosourcelink + '\n'
-                             'You already downloaded the following biosources:\n' + ', '.join(lt_biosources),
+                                               'You already downloaded the following biosources:\n' + ', '.join(
+                            lt_biosources),
                         metavar='BIOSOURCE')
     parser.add_argument('-t', '--tf', default=['all'], type=str, nargs='+',
                         help='Allowed values are \'all\', \'downloaded\' or epigenetic marks from\n'
                              + tflink + '\n'
-                             'You already downloaded the following TFs:\n' + ', '.join(lt_tfs),
+                                        'You already downloaded the following TFs:\n' + ', '.join(lt_tfs),
                         metavar='TF')
     parser.add_argument('-w', '--width', default=50, type=int,
                         help='parameter to define the range that will be analyzed (peak+-w)')
@@ -79,7 +84,7 @@ def main():
 
     args = parser.parse_args()
 
-    # if -v / --visualize was stated, call visualisation for exiszting results
+    # if -v / --visualize was stated, call visualisation for existing results
     if args.visualize:
         print("Aufruf Visualisierung")
 
@@ -138,16 +143,16 @@ def main():
         # test if biosource or tf equals 'all'
         # if yes, set the value to all possible values from deepbluer
         if 'downloaded' in args.biosource:
-            #try:
-            args.biosource = lt_biosources
-            #except:
-                #print("There is currently no data available. You need to download the data first.")
-                #exit(2)
+            if lt_biosources != '-':
+                args.biosource = lt_biosources
+            else:
+                print("There is currently no data available. You need to download the data first.")
+                exit(2)
 
         if 'downloaded' in args.tf:
-            try:
+            if lt_tfs != '-':
                 args.tf = lt_tfs
-            except:
+            else:
                 print("There is currently no data available. You need to download the data first.")
                 exit(2)
 
@@ -156,10 +161,12 @@ def main():
         download_dict = {}
         if linking_table_exist:
             for bs in args.biosource:
-                if len(lt.loc[(lt['genome'].str.lower() == args.genome.lower()) & (lt['biosource'].str.lower() == bs.lower())]) >= 1:
+                if len(lt.loc[(lt['genome'].str.lower() == args.genome.lower()) & (
+                        lt['biosource'].str.lower() == bs.lower())]) >= 1:
                     for tf in args.tf:
-                        if len(lt.loc[(lt['genome'].str.lower() == args.genome.lower()) & (lt['biosource'].str.lower() == bs.lower()) & (
-                                lt['epigenetic_mark'].str.lower() == tf.lower())]) < 1:
+                        if len(lt.loc[(lt['genome'].str.lower() == args.genome.lower()) & (
+                                lt['biosource'].str.lower() == bs.lower()) & (
+                                              lt['epigenetic_mark'].str.lower() == tf.lower())]) < 1:
                             if bs not in download_dict:
                                 download_dict[bs] = [tf]
                             else:
