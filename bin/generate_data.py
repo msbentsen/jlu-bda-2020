@@ -111,9 +111,10 @@ class DataConfig:
         bigwigMerge = subprocess.check_output(["which", "bigWigMerge"])
         bedgraphtobigwig = subprocess.check_output(
             ["which", "bedGraphToBigWig"])
-        filepath = os.path.join(self.outpath, "data", "temp")
+        filepath = os.path.join(self.outpath, "data", "temp", self.csvname)
 
-        merge_all(filepath, self.chromsizes, bedgraphtobigwig, bigwigMerge)
+        merge_all(filepath, self.chromsizes,
+                  bedgraphtobigwig, bigwigMerge, ["bedgraph"])
 
     def sort_files(self):
         """ merge forward/reverse read files into a single .bw
@@ -142,5 +143,5 @@ class DataConfig:
 
     def generate_dictionaries(self):
         """Generate pickle files for the downloaded data """
-        path = os.path.joion(self.outpath, "data")
+        path = os.path.join(self.outpath, "data")
         parse(path)
