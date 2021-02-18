@@ -67,7 +67,8 @@ class DataConfig:
              "-g", self.genome,
              "-m", self.epigenetic_mark])
         if rc != 0:
-            print("error generating .csv")
+            logging.error("error generating .csv")
+            raise Exception("csv.r could not create CSV")
 
     def download_data(self):
         """Download files from .csv
@@ -82,7 +83,8 @@ class DataConfig:
 
         rc = subprocess.call([tool, "-i", csv, "-o", outdir])
         if rc != 0:
-            logging.error('Error downloading files:')
+            logging.error("export_from_csv.r could not download data")
+            raise Exception("export_from_csv.r could not download data")
 
     def validate_convert_files(self):
         """ Validates filetypes and converts them to requested filetype if needed
@@ -97,7 +99,8 @@ class DataConfig:
         rc = subprocess.call(
             [tool, "bigwig", indir, self.chromsizes, self.csvname])
         if rc != 0:
-            print("error converting datafiles ")
+            logging.error("convert_files.sh could not convert files")
+            raise Exception("convert_files.sh could not convert files")
 
     def merge_forward_reversre(self):
         """ merge forward/reverse read files into a single .bw
@@ -126,7 +129,8 @@ class DataConfig:
         rc = subprocess.call(
             [tool, indir, outdir, csv, self.csvname])
         if rc != 0:
-            print("error sorting datafiles")
+            logging.error("sort_files.sh could not sort files")
+            raise Exception("sort_files.sh could not sort files")
 
     def normalize(self):
         """ Normalize files to allow proper analysis
