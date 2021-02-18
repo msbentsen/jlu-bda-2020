@@ -1,11 +1,11 @@
-#!/bin/bin/env bash
+#!/bin/env bash
 
 #===============================================================================
 #
 #  FILE:  convert.sh
 #
-#  USAGE:  convert.sh [filetype to convert to]
-#					[path to files] [csv_path]
+#  USAGE:  convert.sh [filetype to convert to] [path to files]
+#					  [genome.chrom.size folder path] [name of csv]
 #
 #  DESCRIPTION:  Validate and convert  files in src_path according to the
 #				parameters. At the same time ensure proper file-naming.
@@ -15,9 +15,11 @@
 #===============================================================================
 filetype=$1
 source_path=$2
-csv_path=$3
+chrom_path=$3
+csv_name=$4
 
-new_link=$source_path/linking.csv
+new_link=$source_path/$csv_name.new
+touch "$new_link"
 export new_filename=""
 
 
@@ -28,8 +30,8 @@ export new_filename=""
 #  $1 = filename of the file to check
 #  $2 = format of the filecontent
 #===============================================================================
-validate_file () {
-	local file_extension=${$1##*.}
+validate_filetype () {
+	local file_extension=${1##*.}
 	local filetype
 	case "$2" in
 	"CHROMOSOME,START,END,VALUE")
@@ -48,7 +50,7 @@ validate_file () {
 	esac
 	if [ "$filetype" != "$file_extension" ]; then
 		new_filename=$(basename "$1")
-		new_filename="${$new_filename%.*}.$filetype"
+		new_filename="${new_filename%.*}.$filetype"
 		return 1
 	fi
 	return 0
@@ -62,17 +64,17 @@ validate_file () {
 #  §2 = filetype to convert to
 #  $3 = genome of the filecontent, needed for chrom.sizes
 #=============================================================	==================
-convert_files() {
-	local file_extension=${$1##*.}
-	local file_name=${$1%.*}
+convert_file() {
+	local file_extension=${1##*.}
+	local file_name=${1%.*}
 	if [ "$2" == "bigwig" ] | [ "$2" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
-			cut --fields 1-3,7 "$source_path/$1" > "$source_path/$file_name.bedgraph"
+			cut --fields 1-3,7 "$1" > "$file_name.bedgraph"
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
-			./tools/bedGraphToBigWig "$file_name.$file_extension" \
-				"$source_path/$3.chrom.sizes" "$file_name.bw"
+			bedGraphToBigWig "$file_name.$file_extension" \
+				"$4/$3.chrom.sizes" "$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 		fi
@@ -84,22 +86,25 @@ convert_files() {
 # Goes through all lines of the .csv and validates the file before attempting
 # to convert it to the proper filetype
 #===============================================================================
-while IFS="," read -r experiment_id	genome	biosource	technique	\
-	epigenetic_mark	filename	data_type	format	remaining
+while IFS=";" read -r experiment_id	genome	biosource	technique	\
+	epigenetic_mark	filename	data_type	format remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
 	fi
 
 	source_file="$source_path/$filename"
-	if [[ "$(validate_filetype "$filename" "$format")" != "0" ]]; then
-	 filename=$new_filename
+
+	if validate_filetype "$filename" "$format"; then
+		mv "$source_file" "$source_path/$new_filename"
+	 	source_file="$source_path/$new_filename"
 	fi
-	convert_file "$source_file" "$filetype" "$genome"
+	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
-	,$epigenetic_mark,$filename,$data_type,$format,$remaining"\
+	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
 	>> "$new_link"
-done < <(tail --lines +2 "$csv_path")
+done < <(tail --lines +2 "$source_path/$csv_name")
 
-mv "$new_link" "$source_path/linking_table.csv"
+#replace out of date linking table with up to date one
+mv "$new_link" "$source_path/$csv_name"
