@@ -142,4 +142,5 @@ class DataConfig:
 
     def generate_dictionaries(self):
         """Generate pickle files for the downloaded data """
-        parse()
+        path = os.path.joion(self.outpath, "data")
+        parse(path)
