@@ -3,6 +3,8 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
+  - r-base
+  - r-data.table
   - bioconductor-deepbluer
   - ucsc-bedgraphtobigwig
   - ucsc-bigwigtobedgraph
