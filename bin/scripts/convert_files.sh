@@ -22,7 +22,8 @@ new_link=$source_path/$csv_name.new
 touch "$new_link"
 export new_filename=""
 
-
+# Strip .txt ending of downloaded files
+rename '.txt' '' "$source_path/*"
 #==== Function =================================================================
 #  Name: validate_file
 #  Description: Validates that the file extension of a file fits the content of
