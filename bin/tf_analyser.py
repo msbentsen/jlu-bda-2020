@@ -56,21 +56,38 @@ def main():
     tflink = '\x1b]8;;https://deepblue.mpi-inf.mpg.de/dashboard.php#ajax/deepblue_view_epigenetic_marks.php' \
              '/\aDeepBlueR\x1b]8;;\a '
 
+    # call "get_parameter_choices.r" to get all available genomes, biosources and tfs from deepbluer
+    # reformat output of r script to get a separate list for genomes, biosources and tfs
+    choices = subprocess.check_output("./bin/scripts/get_parameter_choices.r", shell=True).decode("utf-8")
+    choices = re.sub(r" {2,}", "", choices)
+    choices = re.sub(r"\[[0-9]*] ", "", choices).replace("\n", ",").replace("\"", "").split(";")
+
+    genome_choices = choices[0].split(",")[0:-1]
+    biosource_choices = choices[1].split(",")[1:-1]
+    biosource_choices.append('all')
+    biosource_choices.append('downloaded')
+    tf_choices = choices[2].split(",")[1:-1]
+    tf_choices.append('all')
+    tf_choices.append('downloaded')
+    for x in ("DNaseI", "DNA Accessibility"):
+        if x in tf_choices:
+            tf_choices.remove(x)
+
     # parse arguments submitted by the user
     parser = argparse.ArgumentParser(description='Analysis of transcription factors',
                                      formatter_class=RawTextHelpFormatter)
-    parser.add_argument('-g', '--genome', default='hg19', type=str,
+    parser.add_argument('-g', '--genome', default='hg19', type=str, choices=genome_choices,
                         help='Allowed values are genome names from\n'
                              + genomelink + '\n'
                                             'You already downloaded the following genomes:\n' + ', '.join(lt_genomes),
                         metavar='GENOME')
-    parser.add_argument('-b', '--biosource', default=['all'], type=str, nargs='+',
+    parser.add_argument('-b', '--biosource', default=['all'], type=str, nargs='+', choices=biosource_choices,
                         help='Allowed values are \'all\', \'downloaded\' or biosources from\n'
                              + biosourcelink + '\n'
                                                'You already downloaded the following biosources:\n' + ', '.join(
                             lt_biosources),
                         metavar='BIOSOURCE')
-    parser.add_argument('-t', '--tf', default=['all'], type=str, nargs='+',
+    parser.add_argument('-t', '--tf', default=['all'], type=str, nargs='+', choices=tf_choices,
                         help='Allowed values are \'all\', \'downloaded\' or epigenetic marks from\n'
                              + tflink + '\n'
                                         'You already downloaded the following TFs:\n' + ', '.join(lt_tfs),
@@ -90,48 +107,6 @@ def main():
 
     # compute analysis
     else:
-
-        # call "get_parameter_choices.r" to get all available genomes, biosources and tfs from deepbluer
-        # reformat output of r script to get a separate list for genomes, biosources and tfs
-        choices = subprocess.check_output("./bin/scripts/get_parameter_choices.r", shell=True).decode("utf-8")
-        choices = re.sub(r" {2,}", "", choices)
-        choices = re.sub(r"\[[0-9]*] ", "", choices).replace("\n", ",").replace("\"", "").split(";")
-
-        genome_choices = choices[0].split(",")[0:-1]
-        biosource_choices = choices[1].split(",")[1:-1]
-        biosource_choices.append('all')
-        biosource_choices.append('downloaded')
-        tf_choices = choices[2].split(",")[1:-1]
-        tf_choices.append('all')
-        tf_choices.append('downloaded')
-        for x in ("DNaseI", "DNA Accessibility"):
-            if x in tf_choices:
-                tf_choices.remove(x)
-
-        # test if user input for genome, biosource and tf exists in deepbluer
-        if args.genome not in genome_choices:
-            print(
-                "usage: tf_analyser.py [-h] [-g GENOME] [-b BIOSOURCE [BIOSOURCE ...]] [-t TF [TF ...]] [-w WIDTH] ["
-                "-r [REDO_ANALYSIS]]")
-            print("tf_analyser.py: error: argument -g/--genome: invalid choice: ", args.genome)
-            exit(2)
-
-        for bs in args.biosource:
-            if bs not in biosource_choices:
-                print(
-                    "usage: tf_analyser.py [-h] [-g GENOME] [-b BIOSOURCE [BIOSOURCE ...]] [-t TF [TF ...]] [-w "
-                    "WIDTH] [-r [REDO_ANALYSIS]]")
-                print("tf_analyser.py: error: argument -b/--biosource: invalid choice: ", bs)
-                exit(2)
-
-        for tf in args.tf:
-            if tf not in tf_choices:
-                print(
-                    "usage: tf_analyser.py [-h] [-g GENOME] [-b BIOSOURCE [BIOSOURCE ...]] [-t TF [TF ...]] [-w "
-                    "WIDTH] [-r [REDO_ANALYSIS]]")
-                print("tf_analyser.py: error: argument -t/--tf: invalid choice: ", tf)
-                exit(2)
-
         # test if biosource or tf equals 'all'
         # if yes, set the value to all possible values from deepbluer
         if 'all' in args.biosource:
