@@ -23,58 +23,30 @@ library(DeepBlueR)
 # Downloads all files listed in the csv that do not exist in the output dir yet
 
 export_from_csv <- function(csv_file,out_dir,chunk_size) {
-<<<<<<< Updated upstream:bin/scripts/export_from_csv.r
-
-  # extract_chromosome()
-  # Expects a single filename string
-  # Splits the string by periods and returns second-to-last substring for names with extensions, otherwise the last one
-  # Example:
-  # input:    filename="MS034301.CM.signal_reverse.chr14.bedgraph"
-  # output:   "chr14"
-
-  extract_chromosome <- function(filename) {
-    mystr <- strsplit(filename,split=".",fixed=TRUE)[[1]]
-    mylen <- length(mystr)
-    if(mylen > 2) {
-      return(mystr[mylen-1])
-    } else if(mylen == 2) {
-      return(mystr[mylen])
-    } else {
-      stop(paste("file",filename,"does not contain \".\" separator"))
-    }
-  }
-
-=======
   
->>>>>>> Stashed changes:scripts/export_from_csv.r
   if(!dir.exists(out_dir)) {
     dir.create(out_dir)
   }
-
+  
   # This section creates a queue of files that need to be downloaded.
   # It starts as the filename column from the csv,
-<<<<<<< Updated upstream:bin/scripts/export_from_csv.r
-
-  data <- fread(file=csv_file,header=TRUE,sep=",",select=c("experiment_id","filename","format","technique","genome"))
-=======
   
   data <- fread(file=csv_file,header=TRUE,sep=";",select=c("experiment_id","filename","format","technique","genome"))
->>>>>>> Stashed changes:scripts/export_from_csv.r
   all_csv_files <- data$filename
-
+  
   # but the script checks whether there are files that have already been
   # downloaded in the output folder. Is this the case, then they are
   # subtracted from the queue.
-
+  
   all_files <- dir(path=out_dir,pattern=".txt")
   meta_files <- dir(path=out_dir,pattern="meta.txt")
   downloaded_files <- all_files[!all_files %in% meta_files]
   downloaded_files <- gsub(".txt","",downloaded_files)
-
+  
   queued_files <- all_csv_files[!all_csv_files %in% downloaded_files]
-
+  
   if(length(queued_files) > 0) {
-
+    
     # get chrom sizes for all genomes in the CSV
     genomes <- unique(data$genome)
     chrom_sizes <- vector("list")
@@ -83,7 +55,7 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
       #chroms = chroms$id
       chrom_sizes[[genome]] <- chroms
     }
-
+    
     while(length(queued_files) > 0) {
       # will loop forever if one or more files repeatedly cause errors
       for(i in 1:nrow(data)) {
@@ -115,14 +87,6 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
             genom <- row$genome
             this_chrom_size <- chrom_sizes[[genom]][chrom_sizes[[genom]]$id == chr]$name
             chunks <- seq(1,this_chrom_size,by=chunk_size)
-<<<<<<< Updated upstream:bin/scripts/export_from_csv.r
-            requests <- vapply(chunks,function(chunk) {
-              query_id <- deepblue_select_experiments(experiment_name = id, chromosome = chr, start = chunk, end = chunk + chunk_size)
-              return(deepblue_get_regions(query_id = query_id, output_format = row[3]))
-            })
-            request_data = try(deepblue_batch_export_results(requests=requests,prefix=filename,suffix="",target.directory=out_dir,bed.format=FALSE))
-            if(class(request_data) != "try-error") {
-=======
             for(chunk in chunks) {
               query_id <- deepblue_select_experiments(experiment_name = id, chromosome = chr, start = chunk, end = chunk + chunk_size)
               message(paste("query id:",query_id))
@@ -140,18 +104,12 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
               }
             }
             if(no_errors) {
->>>>>>> Stashed changes:scripts/export_from_csv.r
               queued_files <<- setdiff(queued_files,filename)
             }
           }
         }
-<<<<<<< Updated upstream:bin/scripts/export_from_csv.r
-      })
-    }
-=======
       }
     }    
->>>>>>> Stashed changes:scripts/export_from_csv.r
   } else {
     stop("No new files to download.")
   }
