@@ -106,14 +106,14 @@ def calculate_mean(i,peaklocationstart, peaklocationend):
     for interval in i:
         if interval[0]< peaklocationstart and interval[1] > peaklocationend:
             interval_length = (interval[1] - interval[0]) - (
-                        interval[1] - peaklocationend + interval[0] + peaklocationstart)
+                        interval[1] - peaklocationend + interval[0] - peaklocationstart)
         else:
             if interval[1] > peaklocationend:
                 interval_length = (interval[1] - interval[0]) - (
                         interval[1] - peaklocationend)
             elif interval[0]< peaklocationstart:
                 interval_length = (interval[1] - interval[0]) - (
-                        interval[0] + peaklocationstart)
+                        interval[0] - peaklocationstart)
             else:
                 interval_length = interval[1] - interval[0]
         length += interval_length
