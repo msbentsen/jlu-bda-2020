@@ -96,8 +96,9 @@ export class GraphHomeComponent implements OnInit {
     //this.api_service.Tree_Data.next(this.nestedDataSource.data)
     this.api_service.setPathList().then(() =>{
       console.log(this.api_service.Viszalization_Data.value)
+      this.router.navigate(["/graph_biosource"])
     })
-    //this.router.navigate(["/graph_biosource"])
+    
   }
 
   updateAllChecked(node: TFItemNode) {

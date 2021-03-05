@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { NavigationExtras, Router } from '@angular/router';
-import {FlaskApiService} from '../service/flask-api.service'
+import { Router } from '@angular/router';
+//import {FlaskApiService} from '../service/flask-api.service'
 
 @Component({
   selector: 'app-home',
@@ -13,7 +13,7 @@ export class HomeComponent implements OnInit {
   
   constructor(
     private router: Router,
-    private api_service: FlaskApiService
+    //private api_service: FlaskApiService
     ) { }
 
   
