@@ -40,7 +40,8 @@ class DataConfig:
         if not os.path.exists(logs):
             os.makedirs(logs)
 
-        logfile = os.path.join(logs, time, "_generate_data.log")
+        logname = time + "_generate_data.log"
+        logfile = os.path.join(logs, logname)
         logging.basicConfig(filename=logfile, level=logging.INFO)
         return logfile
 
