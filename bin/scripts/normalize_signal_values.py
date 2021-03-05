@@ -45,17 +45,17 @@ def normalize_all(linkage_table_new_path, linkage_table_old_path=""):
     default value
     """
     linkage_table_new = pd.read_csv(linkage_table_new_path)
-    #linkage_table_old = linkage_table_old_path if linkage_table_old_path == \
-        #"" else pd.read_csv(linkage_table_old_path)
+    # linkage_table_old = linkage_table_old_path if linkage_table_old_path == \
+    # "" else pd.read_csv(linkage_table_old_path)
     file_paths_new = list(linkage_table_new["file_path"])
     column_names_new = list(linkage_table_new["format"])
-    #file_paths_old = linkage_table_old if linkage_table_old == "" else \
-        #list(linkage_table_old["file_path"])
-    #column_names_old = linkage_table_old if linkage_table_old == "" else \
-        #list(linkage_table_old["format"])
+    # file_paths_old = linkage_table_old if linkage_table_old == "" else \
+    # list(linkage_table_old["file_path"])
+    # column_names_old = linkage_table_old if linkage_table_old == "" else \
+    # list(linkage_table_old["format"])
     log_file_paths = []
-    min = math.inf
-    max = -math.inf
+    min_value = math.inf
+    max_value = -math.inf
 
     # Log scale all newly downloaded files and save the paths to files with
     # log values
@@ -80,10 +80,10 @@ def log_scale_file(file_path, column_names):
 
     if is_big_wig:
         bw = pyBigWig.open(file_path)
-        chroms = bw.chroms()
+        chrs = bw.chroms()
         log_values = []
 
-        for chrom in chroms.keys():
+        for chrom in chrs.keys():
             intervals = bw.intervals(chrom)
             signal_values = [interval[2] for interval in intervals]
             log_vals = numpy.log(signal_values)
@@ -138,15 +138,14 @@ def min_max_scale_file(file_path, log_file_path, column_names, min_val,
     """
     tmp_file_path = file_path + ".tmp"
     log_values = numpy.loadtxt(log_file_path, usecols=[0])
-    min_max_values = [str((x - min_val) / (max_val - min_val)) for x in
-                      log_values]
+    min_max_values = [(x - min_val) / (max_val - min_val) for x in log_values]
     is_big_wig = is_bigwig(file_path)
 
     if is_big_wig:
         bw = pyBigWig.open(file_path)
         chrs = bw.chroms()
         header = list(chrs.items())
-        bw_new = pyBigWig.open(tmp_file_path)
+        bw_new = pyBigWig.open(tmp_file_path, 'w')
         bw_new.addHeader(header)
 
         for chrom in chrs.keys():
@@ -166,7 +165,7 @@ def min_max_scale_file(file_path, log_file_path, column_names, min_val,
         with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
             for line in file:
                 line_split = line.strip().split("\t")
-                line_split[idx] = min_max_values[cnt]
+                line_split[idx] = str(min_max_values[cnt])
                 cnt += 1
                 line_split.append("\n")
                 line_write = "\t".join(line_split)
