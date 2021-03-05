@@ -29,6 +29,7 @@ import math
 import os
 import pandas as pd
 import numpy
+import pyBigWig
 
 
 def normalize_all(linkage_table_new_path, linkage_table_old_path=""):
@@ -75,13 +76,29 @@ def log_scale_file(file_path, column_names):
     :return: log_file_path: String containing path to log-scaled file
     """
     log_file_path = file_path + ".log"
-    idx = get_value_index(column_names)
-    signal_values = numpy.loadtxt(file_path, usecols=[idx])
-    log_values = numpy.log(signal_values)
-    log_values = [str(value) + "\n" for value in log_values]
+    is_big_wig = is_bigwig(file_path)
 
-    with open(log_file_path, 'w') as tmp_file:
-        tmp_file.writelines(log_values)
+    if is_big_wig:
+        bw = pyBigWig.open(file_path)
+        chroms = bw.chroms()
+        log_values = []
+
+        for chrom in chroms.keys():
+            intervals = bw.intervals(chrom)
+            signal_values = [interval[2] for interval in intervals]
+            log_vals = numpy.log(signal_values)
+            log_vals = [str(value) + "\n" for value in log_vals]
+            log_values.extend(log_vals)
+
+        bw.close()
+    else:
+        idx = get_value_index(column_names)
+        signal_values = numpy.loadtxt(file_path, usecols=[idx])
+        log_values = numpy.log(signal_values)
+        log_values = [str(value) + "\n" for value in log_values]
+
+    with open(log_file_path, 'w') as log_file:
+        log_file.writelines(log_values)
 
     return log_file_path
 
@@ -98,10 +115,20 @@ def get_min_max(file_path, min, max, column_names):
     :param column_names: Array of Strings of column names in file
     :return: min and max as float
     """
-    idx = get_value_index(column_names)
-    signal_values = numpy.loadtxt(file_path, usecols=[idx])
-    tmp_min = min(signal_values)
-    tmp_max = max(signal_values)
+    is_big_wig = is_bigwig(file_path)
+
+    if is_big_wig:
+        bw = pyBigWig.open(file_path)
+        header = bw.header()
+        tmp_min = header['minVal']
+        tmp_max = header['maxVal']
+        bw.close()
+    else:
+        idx = get_value_index(column_names)
+        signal_values = numpy.loadtxt(file_path, usecols=[idx])
+        tmp_min = min(signal_values)
+        tmp_max = max(signal_values)
+
     min = tmp_min if tmp_min < min else min
     max = tmp_max if tmp_max > max else max
 
@@ -120,19 +147,38 @@ def min_max_scale_file(file_path, log_file_path, column_names, min, max):
     :param min: Global min value
     """
     tmp_file_path = file_path.rsplit("/", maxsplit=1)[0] + "/tmp_file.txt"
-    idx = get_value_index(column_names)
     log_values = numpy.loadtxt(log_file_path, usecols=[0])
     min_max_values = [str((x - min) / (max - min)) for x in log_values]
-    cnt = 0
+    is_big_wig = is_bigwig(file_path)
 
-    with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
-        for line in file:
-            line_split = line.strip().split("\t")
-            line_split[idx] = min_max_values[cnt]
-            cnt += 1
-            line_split.append("\n")
-            line_write = "\t".join(line_split)
-            tmp_file.write(line_write)
+    if is_big_wig:
+        bw = pyBigWig.open(file_path)
+        chroms = bw.chroms()
+        header = list(chroms.items())
+        bw_new = pyBigWig.open(tmp_file_path, 'w')
+        bw_new.addHeader(header)
+
+        for chrom in chroms.keys():
+            intervals = bw.intervals(chrom)
+            chr = [chrom] * len(intervals)
+            starts = [interval[0] for interval in intervals]
+            ends = [interval[1] for interval in intervals]
+            bw_new.addEntries(chr, starts, ends=ends, values=min_max_values)
+
+        bw.close()
+        bw_new.close()
+    else:
+        idx = get_value_index(column_names)
+        cnt = 0
+
+        with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
+            for line in file:
+                line_split = line.strip().split("\t")
+                line_split[idx] = min_max_values[cnt]
+                cnt += 1
+                line_split.append("\n")
+                line_write = "\t".join(line_split)
+                tmp_file.write(line_write)
 
     os.rename(tmp_file_path, file_path)
 
@@ -151,3 +197,20 @@ def get_value_index(column_names):
         index = column_names.index("VALUE")
 
     return index
+
+
+def is_bigwig(file_path):
+    """
+    Method checks if a file has bigWig format or not.
+
+    :param file_path: String representing path to file
+    :return: Boolean value, True if file has bigWig format, False if not
+    """
+    try:
+        bw = pyBigWig.open(file_path)
+        is_big_wig = bw.isBigWig()
+        bw.close()
+    except:
+        is_big_wig = False
+
+    return is_big_wig
