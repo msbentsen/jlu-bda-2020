@@ -67,6 +67,7 @@ class DataConfig:
         rc = subprocess.call(
             [tool, "-b", self.biosource,
              "-g", self.genome,
+             "-c", self.chromosome,
              "-m", self.epigenetic_mark,
              "-o", self.outpath])
         if rc != 0:
