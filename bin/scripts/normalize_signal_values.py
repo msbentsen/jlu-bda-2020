@@ -103,39 +103,29 @@ def log_scale_file(file_path, column_names):
     return log_file_path
 
 
-def get_min_max(file_path, min, max, column_names):
+def get_min_max(log_file_path, min_val, max_val):
     """
-    Method finds min value and max value in a file.
+    Method finds min value and max value in a .log file.
 
-    :param file_path: String with path to file
-    :param min: Start value for min. If method is called for first time
-                math.Inf is recommended.
-    :param max: Start value for max. If method is called for the first time
-                -math.Inf is recommended.
-    :param column_names: Array of Strings of column names in file
+    :param log_file_path: String with path to file with log values
+    :param min_val: Start value for min. If method is called for first time
+                math.Inf is recommended
+    :param max_val: Start value for max. If method is called for the first time
+                -math.Inf is recommended
     :return: min and max as float
     """
-    is_big_wig = is_bigwig(file_path)
+    signal_values = numpy.loadtxt(log_file_path, usecols=[0])
+    tmp_min = min(signal_values)
+    tmp_max = max(signal_values)
 
-    if is_big_wig:
-        bw = pyBigWig.open(file_path)
-        header = bw.header()
-        tmp_min = header['minVal']
-        tmp_max = header['maxVal']
-        bw.close()
-    else:
-        idx = get_value_index(column_names)
-        signal_values = numpy.loadtxt(file_path, usecols=[idx])
-        tmp_min = min(signal_values)
-        tmp_max = max(signal_values)
+    min_val = tmp_min if tmp_min < min_val else min_val
+    max_val = tmp_max if tmp_max > max_val else max_val
 
-    min = tmp_min if tmp_min < min else min
-    max = tmp_max if tmp_max > max else max
-
-    return min, max
+    return min_val, max_val
 
 
-def min_max_scale_file(file_path, log_file_path, column_names, min, max):
+def min_max_scale_file(file_path, log_file_path, column_names, min_val,
+                       max_val):
     """
     Method min-max scales values in file to a range between 0 and 1.
 
@@ -143,27 +133,29 @@ def min_max_scale_file(file_path, log_file_path, column_names, min, max):
     :param log_file_path: String with path to file with log-scaled values of
     original file
     :param column_names: List of strings with names of columns in file
-    :param max: Global max value
-    :param min: Global min value
+    :param max_val: Global max value
+    :param min_val: Global min value
     """
-    tmp_file_path = file_path.rsplit("/", maxsplit=1)[0] + "/tmp_file.txt"
+    tmp_file_path = file_path + ".tmp"
     log_values = numpy.loadtxt(log_file_path, usecols=[0])
-    min_max_values = [str((x - min) / (max - min)) for x in log_values]
+    min_max_values = [str((x - min_val) / (max_val - min_val)) for x in
+                      log_values]
     is_big_wig = is_bigwig(file_path)
 
     if is_big_wig:
         bw = pyBigWig.open(file_path)
-        chroms = bw.chroms()
-        header = list(chroms.items())
-        bw_new = pyBigWig.open(tmp_file_path, 'w')
+        chrs = bw.chroms()
+        header = list(chrs.items())
+        bw_new = pyBigWig.open(tmp_file_path)
         bw_new.addHeader(header)
 
-        for chrom in chroms.keys():
+        for chrom in chrs.keys():
             intervals = bw.intervals(chrom)
-            chr = [chrom] * len(intervals)
+            chromosomes = [chrom] * len(intervals)
             starts = [interval[0] for interval in intervals]
             ends = [interval[1] for interval in intervals]
-            bw_new.addEntries(chr, starts, ends=ends, values=min_max_values)
+            bw_new.addEntries(chromosomes, starts, ends=ends,
+                              values=min_max_values)
 
         bw.close()
         bw_new.close()
