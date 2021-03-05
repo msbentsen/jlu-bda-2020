@@ -97,7 +97,7 @@ do
 
 	source_file="$source_path/$filename"
 
-	if validate_filetype "$filename" "$format"; then
+	if ! validate_filetype "$filename" "$format"; then
 		mv "$source_file" "$source_path/$new_filename"
 	 	source_file="$source_path/$new_filename"
 	fi
