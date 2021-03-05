@@ -9,9 +9,10 @@ from scripts.generate_pickle import parse
 class DataConfig:
     """Contains configuration data for the pull_data function.    """
 
-    def __init__(self, genome, biosource, epigenetic_mark,
+    def __init__(self, genome, chromosome, biosource, epigenetic_mark,
                  output_path, csv_name, chromsizes):
         self.genome = " ".join(genome)
+        self.chromosome = " ".join(chromosome)
         self.biosource = " ".join(biosource)
         self.epigenetic_mark = " ".join(epigenetic_mark)
         self.binpath = os.path.abspath(os.path.dirname(__file__))
@@ -40,7 +41,7 @@ class DataConfig:
             os.makedirs(logs)
 
         logfile = os.path.join(logs, time, "_generate_data.log")
-        logging.basicConfig(logfile=logfile, level=logging.INFO)
+        logging.basicConfig(filename=logfile, level=logging.INFO)
         return logfile
 
     def pull_data(self):
@@ -49,7 +50,7 @@ class DataConfig:
         self.generate_csv()
         self.download_data()
         self.validate_convert_files()
-        self.merge_forward_reversre()
+        self.merge_forward_reverse()
         self.normalize()
         self.sort_files()
         self.generate_dictionaries()
@@ -65,7 +66,8 @@ class DataConfig:
         rc = subprocess.call(
             [tool, "-b", self.biosource,
              "-g", self.genome,
-             "-m", self.epigenetic_mark])
+             "-m", self.epigenetic_mark,
+             "-o", self.outpath])
         if rc != 0:
             logging.error("error generating .csv")
             raise Exception("csv.r could not create CSV")
@@ -93,7 +95,7 @@ class DataConfig:
         convert_files.sh takes a fileformat and a path with the
         convertable files
         """
-        tool = os.path.join(self.binpath, "scripts", "convert_files.r")
+        tool = os.path.join(self.binpath, "scripts", "convert_files.sh")
         indir = os.path.join(self.outpath, "data", "temp")
 
         rc = subprocess.call(
@@ -102,7 +104,7 @@ class DataConfig:
             logging.error("convert_files.sh could not convert files")
             raise Exception("convert_files.sh could not convert files")
 
-    def merge_forward_reversre(self):
+    def merge_forward_reverse(self):
         """ merge forward/reverse read files into a single .bw
 
         Calls scripts.merge_files and handles return value
@@ -122,7 +124,7 @@ class DataConfig:
         Calls scripts.merge_files and handles return value
 
         """
-        tool = os.path.join(self.binpath, "scripts", "sort_files.r")
+        tool = os.path.join(self.binpath, "scripts", "sort_files.sh")
         outdir = os.path.join(self.outpath, "data")
         indir = os.path.join(outdir, "temp")
         csv = os.path.join(indir, self.csvname)

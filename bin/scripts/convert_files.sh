@@ -1,5 +1,5 @@
 #!/bin/env bash
-
+# TODO: wenn file schon richtig, konvertierung skippen
 #===============================================================================
 #
 #  FILE:  convert.sh
@@ -23,7 +23,8 @@ touch "$new_link"
 export new_filename=""
 
 # Strip .txt ending of downloaded files
-rename '.txt' '' "$source_path/*"
+
+rename '.txt' '' source_path/* # TODO: error when doublequoting source_path/*
 #==== Function =================================================================
 #  Name: validate_file
 #  Description: Validates that the file extension of a file fits the content of
