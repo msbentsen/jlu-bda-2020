@@ -146,30 +146,19 @@ def merge_all(linkage_table_path, chrom_sizes_paths, conversion_tool_path,
         add_row(row, linkage_table_path, column_names)
 
 
-def read_linkage_table(linkage_table):
+def read_linkage_table(linkage_table_path):
     """
     Method reads in .csv linkage table file via the given file path and
-    returns a data frame with information on genome, bio-source and the file
-    path for forward/reverse read ATAC-seq files.
+    returns a data frame with all information for forward/reverse read ATAC-seq
+    files.
 
-    :return: linkage_frame: A data frame containing the columns "genome",
-             "biosource", "file_path" for all forward/reverse reads files in
-             need of merging
+    :return: linkage_frame: A data frame containing all information for
+             forward/reverse reads files in need of merging
     """
-
-    lt_path = linkage_table
-    linkage_frame = pd.DataFrame()
-
-    with open(lt_path) as lt:
-        lt_reader = csv.DictReader(lt, delimiter=',')
-
-        for row in lt_reader:
-            if row["technique"].lower() == "atac-seq" and \
-                    ("forward" in row["filename"].lower() or
-                     "reverse" in row["filename"].lower()):
-                tmp_series = pd.Series(row)
-                linkage_frame = linkage_frame.append(tmp_series,
-                                                     ignore_index=True)
+    full_lf = pd.read_csv(linkage_table_path)
+    linkage_frame = full_lf.loc[(full_lf['technique'] == 'atac-seq') &
+                                ((full_lf['filename'].str.contains('forward')) |
+                                 (full_lf['filename'].str.contains('reverse')))]
     return linkage_frame
 
 
