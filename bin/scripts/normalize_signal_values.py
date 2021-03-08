@@ -3,23 +3,22 @@ Methods for normalizing ATAC-seq and ChIP-seq signal values.
 
 Goes through the following steps:
 - Read in linkage table .csv file as data frame
-- Log scale all files
-- min-max scale all files (to a range of 0-1)
+- Log-scale all new files and save paths to log-files that have already
+log-scaled
+- min-max-scale all files (to a range of 0-1) with global min and max values
+derived from the log-scaled values of all files in current analysis run
 
 To-do:
 - Bin size problem:
     - Narrow and broad peaks -> narrow peaks only has summit? One value for
       multiple pos? Problem that needs solving
-- Min-max scaling:
-    - Does it make sense to scale each file individually or do I need a
-    global min and max?
 
 
 Use as follows:
 
 import normalize_signal_values
 
-
+normalize_signal_values.normalize_all("example_linkage_table_path.csv")
 
 
 by Kristina Müller (kmlr81)
@@ -32,38 +31,42 @@ import numpy
 import pyBigWig
 
 
-def normalize_all(linkage_table_new_path, linkage_table_old_path=""):
+def normalize_all(linkage_table_path):
     """
     Method normalizes all files through log scaling first and then
     min-max scaling to a uniform range between 0 and 1.
 
-    :param linkage_table_new_path: String with path to linkage table .csv
-    file with files downloaded in current run
-    :param linkage_table_old_path: String with path to linkage table .csv
-    file with files downloaded in previous runs. If this file does not yet
-    exist because there have been no previous runs it can be left with
-    default value
+    :param linkage_table_path: String with path to linkage table .csv
+           file containing the files that are part of the current analysis run.
     """
-    linkage_table_new = pd.read_csv(linkage_table_new_path)
-    # linkage_table_old = linkage_table_old_path if linkage_table_old_path == \
-    # "" else pd.read_csv(linkage_table_old_path)
-    file_paths_new = list(linkage_table_new["file_path"])
-    column_names_new = list(linkage_table_new["format"])
-    # file_paths_old = linkage_table_old if linkage_table_old == "" else \
-    # list(linkage_table_old["file_path"])
-    # column_names_old = linkage_table_old if linkage_table_old == "" else \
-    # list(linkage_table_old["format"])
+    linkage_table = pd.read_csv(linkage_table_path)
+    file_paths = list(linkage_table["file_path"])
+    column_names= list(linkage_table["format"])
     log_file_paths = []
     min_value = math.inf
     max_value = -math.inf
 
-    # Log scale all newly downloaded files and save the paths to files with
-    # log values
-    for i in range(0, len(file_paths_new)):
-        log_file_path = log_scale_file(file_paths_new[i], column_names_new[i])
+    # Check all files to see if they have been log-scaled before or not.
+    # If they have, then add path of existing .ln file to log_file_paths,
+    # else log-scale and then add new path
+    for i in range(0, len(file_paths)):
+
+        if os.path.exists(file_paths[i]):
+            log_file_path = file_paths[i] + ".ln"
+        else:
+            log_file_path = log_scale_file(file_paths[i], column_names[i])
+
         log_file_paths.append(log_file_path)
 
     # Find global min and global max values
+    for log_path in log_file_paths:
+        min_value, max_value = get_min_max(log_path, min_val=min_value,
+                                           max_val=max_value)
+
+    # Min-max-scale all files
+    for j in range(0, len(file_paths)):
+        min_max_scale_file(file_paths[j], log_file_paths[j], min_value,
+                           max_value, column_names=column_names[j])
 
 
 def log_scale_file(file_path, column_names=None):
@@ -72,14 +75,14 @@ def log_scale_file(file_path, column_names=None):
     old one but with log scaled signal values in case the old file has bigWig
     format or a one column file containing only log signal values in case the
     old file has bed or bedGraph format. The new file is named after the
-    old one with an additional ending .log.
+    old one with an additional ending .ln.
 
     :param file_path: String of path to file to be read in
     :param column_names: List of Strings with column names in file. Is set to
            None, if not given
     :return: log_file_path: String containing path to log-scaled file
     """
-    log_file_path = file_path + ".log"
+    log_file_path = file_path + ".ln"
 
     if is_big_wig(file_path):
         bw = pyBigWig.open(file_path)
