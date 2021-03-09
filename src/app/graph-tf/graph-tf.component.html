@@ -1,10 +1,42 @@
-Please select the TF:
-<mat-card (click)="goToTF('tf1')">TF 1</mat-card>
-<br>
-<mat-card (click)="goToTF('tf2')">TF 2</mat-card>
-<br>
-<mat-card (click)="goToTF('tf3')">TF 3</mat-card>
-<br>
-<mat-card (click)="goToTF('tf4')">TF 4</mat-card>
-<br>
-<mat-card (click)="goToTF('tf5')">TF 5</mat-card>
+<div *ngFor = "let biosource of graph_list_names_bio; let i_bio = index" [attr.data-index]="i_bio">
+  <mat-card>
+      <mat-card-header>
+          <mat-card-title>
+              {{biosource}}
+          </mat-card-title>
+      </mat-card-header>
+  <div *ngFor = "let tf of graph_list_names_tf; let a = index" [attr.data-index]="a">
+      <mat-card>
+      <mat-card-header>
+          <mat-card-title>
+              {{tf}}
+          </mat-card-title>
+      </mat-card-header>
+      <!--<div fxLayout="row wrap">-->
+     <!--<div *ngFor = "let graph of graph_list; let i = index" [attr.data-index]="i">-->
+          
+      <mat-card >
+              <plotly-plot
+              [data]="graph_list[i_bio][a][0].data"
+              [layout]="graph_list[i_bio][a][0].layout"
+              [useResizeHandler]="true"
+              [updateOnlyWithRevision]="true"></plotly-plot>
+                
+      </mat-card>
+      <!--</div>-->
+     <!--</div>-->
+  </mat-card>
+  </div>
+</mat-card>
+</div>
+
+
+<!--<div *ngFor="let graph of graph_list; let a = index" [attr.data-index]="a">
+
+<plotly-plot
+  [data]="graph.data"
+  [layout]="graph.layout"
+  [useResizeHandler]="true"
+  [updateOnlyWithRevision]="true"></plotly-plot>
+    
+</div>-->

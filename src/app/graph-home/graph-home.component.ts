@@ -94,9 +94,14 @@ export class GraphHomeComponent implements OnInit {
     //console.log(this.nestedDataSource.data)
     //console.log(this.api_service.Tree_Data.value)
     //this.api_service.Tree_Data.next(this.nestedDataSource.data)
-    this.api_service.setPathList().then(() =>{
+    /* for old show png only
+    this.api_service.setTreeData().then(() =>{
       console.log(this.api_service.Viszalization_Data.value)
       this.router.navigate(["/graph_biosource"])
+    })*/
+    this.api_service.setRawData().then(() =>{
+      console.log("on graph home recieved data",this.api_service.RawGraphData.value)
+      this.router.navigate(["/graph_tf"])
     })
     
   }
