@@ -12,16 +12,15 @@ from scripts.ema import EMA
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import sys
 import os
 
-class Main:
+class TF_analyser:
     """
     Main Class of the Analyse Part. This class is to call the whole pipe of this
     part.
     """
     
-    def __init__(self):
+    def __init__(self, n_comps, genome, width):
         """
         Initiation of Variables
 
@@ -35,9 +34,15 @@ class Main:
         path_main = os.path.split(path_bin[0])
         self.path_results = os.path.join(path_main[0], 'results')
             
+        self.genome = genome
+        self.width = width
         self.evaluate_n = True
         self.eval_size = 7
+        
+        if n_comps:
             
+            self.evaluate_n = False
+            self.n_components = n_comps
             
     # def progress(self, count, total, suffix=''):
     #     """
@@ -67,64 +72,82 @@ class Main:
         
     def mainloop(self, data):
         """
-        Main method of the analyse part. Here the Transcription Factors of the pickle File 
-        is analysed and a dataframe of the results is created. Also the distributions of the 
+        Main method of the analyse part. Here the Transcription Factors 
+        are analysed and a dataframe of the results is created. Also the distributions of the 
         ATAC and CHIP data is plotted and safed as png.
 
         Parameters
         ----------
-        path : Input Path
+        data: TYPE: mutiple dicts in dicts containing the actual scores in the last one
+            Data to be analysed
 
         Returns
         -------
-        resultframe : result dataframe
+        resultframe: TYPE: pandas Dataframe
+            result dataframe
 
         """
         
         # total = Input().number_of_chr(data)
         
-        resultframe =pd.DataFrame(columns=['biosource','tf','means','covariances', 'weights']) 
+        resultframe =pd.DataFrame(columns=['genome','width','mode','biosource','tf','means','covariances', 'weights']) 
 
         # i = 0
-        
+        # loop all biosources
         for biosource, b_value in data.items():
-            
+            #loop all transcription factors
             for tf, tf_value in b_value.items():
                 
                 print('analysing: '+ tf)
                 
                 scoresarray = []
-                
+                #combine all scores of the chromosomes into vector-format list
                 for chromosome in tf_value.values():
                 
                     for array in chromosome:
     
                             scoresarray.append([array[-1], array[-2]])
             
+                
                 # Main().progress(i, total, '')
                 
                 
-                scaled_scores = Main().scale(scoresarray)
+                scaled_scores = TF_analyser.scale(self, scoresarray)
                 distribution = np.array(scaled_scores)
+                
+                mode = 'manual'
                 
                 if self.evaluate_n == True:
                     
-                    all_diffs = GmFit().getDifference(distribution, self.eval_size)
-                    n_components = GmFit().evaluate(all_diffs)
+                    mode = 'auto'
+                    #automated number of components evaluation  
+                    all_diffs = GmFit.getDifference(self, distribution, self.eval_size)
+                    self.n_components = GmFit.evaluate(self, all_diffs)
                     plt.plot(all_diffs)
                 
-                single_result = EMA().emAnalyse(distribution, n_components)
-                
+                single_result = EMA().emAnalyse(distribution, self.n_components)
+               
                 single_result.insert(0,'tf',tf)
                 single_result.insert(0,'biosource',biosource)
+                single_result.insert(0, 'mode', mode)
+                single_result.insert(0,'width', self.width)
+                single_result.insert(0,'genome', self.genome)
                 
-                
-                v= VD(self.path_results, tf)
+                #visualization and saving plots 
+                v= VD(self.path_results, tf, self.genome)
                 path = v.displayDensityScatter(distribution, tf)
                 
-                v.altitudePlot(distribution, n_components, tf)
-                v.contourPlot(distribution, n_components, tf)
-                single_result.insert(5, 'path', path)
+                v.altitudePlot(distribution, self.n_components, tf)
+                z = v.contourPlot(distribution, self.n_components, tf)
+            
+                #Add z axis to scoresarray:
+                for i in range(0,len(z)):
+                    scoresarray[i].append(z[i])
+                    
+                #save data
+                np.savetxt(path + '/' + tf + '.csv', scoresarray, delimiter=',')
+                
+                single_result.insert(8, 'path', path)
                 
                 resultframe = pd.concat([resultframe, single_result])
                 
@@ -138,15 +161,20 @@ class Main:
     
     def scale(self, scoresarray):
         """
+        NOT USED IN THE FINAL VERSION
+        =============================
+        
         Method to scale the data to values from 0 to 100 
 
         Parameters
         ----------
-        scoresarray : 2D array of vectors
+        scoresarray: TYPE: list of float64 vectors
+            distribution
 
         Returns
         -------
-        scaled : 2D array of vectors
+        scaled : TYPE: list of float64 vectors
+            scaled distribution
 
         """
         
@@ -179,7 +207,7 @@ class Main:
 if __name__ == '__main__':
 
     data = Repository().inputHandler(path='/home/jan/python-workspace/angewendete_daten_analyse/testsets/calculated_data_3.pickle')
-    resultframe = Main().mainloop(data)
+    resultframe = TF_analyser(None, "Genome", "width").mainloop(data)
     # dirname = os.path.dirname(__file__)
     # resultframe.to_csv(dirname + '/result.csv', index = False, decimal=(','))
     print(resultframe)
