@@ -32,8 +32,8 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
         if biosource in biosource_ls:
 
             # load dictionarys contaning paths to chip and atac bigwig files
-            atacdict = pickle.load(open(picklepath + genom + "/ATAC-seq/" + biosource + ".pickle", "rb"))
-            chipdict = pickle.load(open(picklepath + genom + "/ChIP-seq/" + biosource + ".pickle", "rb"))
+            atacdict = pickle.load(open(picklepath + genom + "/atac-seq/" + biosource + ".pickle", "rb"))
+            chipdict = pickle.load(open(picklepath + genom + "/chip-seq/" + biosource + ".pickle", "rb"))
 
             # generate key for biosource if it does not exist
             if biosource not in calculateddict:
