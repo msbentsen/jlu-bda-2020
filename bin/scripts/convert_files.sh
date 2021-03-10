@@ -15,16 +15,17 @@
 #===============================================================================
 filetype=$1
 source_path=$2
-chrom_path=$3
-csv_name=$4
+out_path=$3
+chrom_path=$4
+csv_name=$5
 
-new_link=$source_path/$csv_name.new
+new_link=$out_path/$csv_name
 touch "$new_link"
 export new_filename=""
 
 # Strip .txt ending of downloaded files
 
-rename '.txt' '' source_path/* # TODO: error when doublequoting source_path/*
+rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
 #==== Function =================================================================
 #  Name: validate_file
 #  Description: Validates that the file extension of a file fits the content of
@@ -47,14 +48,18 @@ validate_filetype () {
 		;;
 	*)
 		echo "unrecognized file format"
-		filetype=""
+		new_filename=$1 #filename stays the same
+		return 2
 		;;
 	esac
-	if [ "$filetype" != "$file_extension" ]; then
+	if [ "$filetype" != "$file_extension" ]; then #filename gets new ending
 		new_filename=$(basename "$1")
 		new_filename="${new_filename%.*}.$filetype"
 		return 1
+	else
+		new_filename=$1 # filename stays the same
 	fi
+
 	return 0
 }
 
@@ -97,10 +102,9 @@ do
 
 	source_file="$source_path/$filename"
 
-	if ! validate_filetype "$filename" "$format"; then
-		mv "$source_file" "$source_path/$new_filename"
-	 	source_file="$source_path/$new_filename"
-	fi
+	validate_filetype "$filename" "$format"
+	cp "$source_file" "$out_path/$new_filename"
+	source_file="$out_path/$new_filename"
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
@@ -108,5 +112,9 @@ do
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")
 
-#replace out of date linking table with up to date one
-mv "$new_link" "$source_path/$csv_name"
+
+filetype=$1
+source_path=$2
+out_path=$3
+chrom_path=$4
+csv_name=$5

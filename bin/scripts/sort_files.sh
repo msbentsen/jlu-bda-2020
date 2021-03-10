@@ -40,12 +40,14 @@ do
 		continue
 	fi
 
-	if [ "$technique" == "ATAC-Seq" ]; then
+	# lowercase comparison to ensure
+	check=$(echo "$technique" | awk '{print tolower($0)}')
+	if [ "$check" == "atac-seq" ]; then
 		new_path="$dest_path/$biosource/$technique"
 		atac=$technique
-	elif [ "$technique" == "chip-seq" ]; then
+	elif [ "$check" == "chip-seq" ]; then
 		new_path="$dest_path/$biosource/$technique/$epigenetic_mark"
-	elif [ "$technique" == "dnase-seq" ]; then
+	elif [ "$check" == "dnase-seq" ]; then
 		new_path="$dest_path/$biosource/$atac"
 	else
 		new_path="$dest_path/$genome/$biosource/$technique/$epigenetic_mark"
@@ -58,3 +60,11 @@ do
 	echo "$experiment_id,$genome,$biosource,$technique,$epigenetic_mark,\
 	$filename,$data_type,$newfile,$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")
+
+
+# TODO: temp linkage für logn in /temp
+# data/l1.csv /erster parameter run
+# data/l2.csv /zweiter parameter run
+# data/temp/norm.csv /nura aktuelle angaben
+# data/download/l1.csv
+# data/download/l2.csv
