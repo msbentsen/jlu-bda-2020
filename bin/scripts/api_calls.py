@@ -68,7 +68,8 @@ import csv
 
 
 def get_biosource_list_for_tree():
-    filename = "results\\result.csv" #<-- PATH to result.csv
+    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'results', 'result.csv'))
+    print(filename)
     results = repository.Repository().read_csv(filename)
     data_ls = []
     data_dict = {}
@@ -144,7 +145,7 @@ def getChecked(data):
 def getRawData(checked_data):
     print(checked_data)
     #filepath
-    filename = "results\\result.csv" #<-- PATH to result.csv
+    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'results', 'result.csv'))
     results = repository.Repository().read_csv(filename)
     rawdata_dict = {}
     
