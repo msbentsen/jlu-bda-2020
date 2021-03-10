@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Spyder Editor
-
 Dies ist eine temporäre Skriptdatei.
 """
 
@@ -33,8 +32,8 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
         if biosource in biosource_ls:
 
             # load dictionarys contaning paths to chip and atac bigwig files
-            atacdict = pickle.load(open(picklepath + genom + "/ATAC-seq/" + biosource + ".pickle", "rb"))
-            chipdict = pickle.load(open(picklepath + genom + "/ChIP-seq/" + biosource + ".pickle", "rb"))
+            atacdict = pickle.load(open(picklepath + genom + "/atac-seq/" + biosource + ".pickle", "rb"))
+            chipdict = pickle.load(open(picklepath + genom + "/chip-seq/" + biosource + ".pickle", "rb"))
 
             # generate key for biosource if it does not exist
             if biosource not in calculateddict:
@@ -87,18 +86,7 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
 
                                     # calculate mean of chip and atac scores
                                     for i in (chip_score, atac_score):
-                                        length = 0
-                                        mean = 0
-                                        for interval in i:
-                                            if interval[1] > peaklocationend:
-                                                interval_length = (interval[1] - interval[0]) - (
-                                                        interval[1] - peaklocationend)
-                                            else:
-                                                interval_length = interval[1] - interval[0]
-                                            length += interval_length
-                                            mean += interval_length * interval[2]
-                                        mean = mean / length
-                                        calculationls.append(mean)
+                                        calculationls.append(calculate_mean(i, peaklocationstart, peaklocationend))
 
                                     # add scores to dictionary
                                     calculateddict[biosource][tf][chromosom].append(calculationls)
@@ -111,3 +99,21 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
                 del calculateddict[biosource]
 
     return calculateddict, exist
+
+def calculate_mean(i,peaklocationstart, peaklocationend):
+    length = 0
+    mean = 0
+    for interval in i:
+        if interval[0]< peaklocationstart and interval[1] > peaklocationend:
+            interval_length = peaklocationend - peaklocationstart
+        else:
+            if interval[1] > peaklocationend:
+                interval_length = peaklocationend - interval[0]
+            elif interval[0]< peaklocationstart:
+                interval_length = interval[1] - peaklocationstart
+            else:
+                interval_length = interval[1] - interval[0]
+        length += interval_length
+        mean += interval_length * interval[2]
+    mean = mean / length
+    return mean

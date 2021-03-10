@@ -84,8 +84,8 @@ class Repository:
 
         Parameters
         ----------
-        resultframe : TYPE
-            DESCRIPTION.
+        resultframe: TYPE: pandas Dataframe
+            results
 
         Returns
         -------

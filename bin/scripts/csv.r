@@ -18,6 +18,8 @@ parser$add_argument("-a", "--atactype", nargs="+", type="character", default="si
                     help="Experiment file types allowed for ATAC/DNAse-Seq data [default: \"%(default)s\"]")
 parser$add_argument("-m", "--marks", nargs="+", type="character", default=NULL,
                     help="(List of) epigenetic marks (i.e. transcription factors) to include [default: all] (Refer to: https://deepblue.mpi-inf.mpg.de/)")
+parser$add_argument("-d", "--directory", type="character", default=".",
+                    help="Output directory for CSV file. If an output filename (-o) containing \"/\" characters is provided, the filename will be used instead. [default: \"%(default)s\"]")
 parser$add_argument("-o", "--output", type="character", default="linking_table",
                     help="Output file name without extension [default: \"%(default)s\"]")
 
@@ -26,7 +28,7 @@ args <- parser$parse_args()
 library(data.table)
 library(DeepBlueR)
 
-create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_type,chip_marks,outfile) {
+create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_type,chip_marks,outdir,outfile) {
   
   # ! doc incomplete
   # new_row(metadata)
@@ -174,7 +176,21 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
     }
   }
   
-  output_file <- paste(outfile,"csv",sep=".")
+  # If "output" argument contains "/", ignore "directory" argument
+  
+  if(grepl("/",outfile)) {
+    splitfile <- strsplit(outfile,"/")[[1]]
+    outdir <- paste(splitfile[-length(splitfile)],collapse="/")
+    output_file <- outfile
+  } else {
+    if(length(outdir) > 0) {
+      outdir <- paste(strsplit(outdir,"/")[[1]],collapse="/") # remove terminating "/" characters
+      output_file <- paste(paste(outdir,outfile,sep="/"))
+    } else {
+      output_file <- outfile
+    }
+  }
+  output_file <- paste(sub("\\.csv$","",output_file),"csv",sep=".")
   
   if(is.null(csv_data)) {
     stop("No data available for CSV")
@@ -182,8 +198,8 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
     # check whether CSV with given filename already exists - if yes, add new rows
     if(file.exists(output_file)) {
       old_csv <- fread(file=output_file,header=TRUE,sep=";",colClasses=c("date_created" = "character"))
-      old_ids <- old_csv$experiment_id
-      csv_data.unique <- csv_data[!csv_data$experiment_id %in% old_ids]
+      old_filenames <- old_csv$filename
+      csv_data.unique <- csv_data[!csv_data$filename %in% old_filenames]
       if(nrow(csv_data.unique) > 0) {
         csv_data <- rbind(old_csv,csv_data.unique,fill=TRUE)
         fwrite(csv_data,file=output_file,na="",sep=";")
@@ -192,6 +208,9 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
         message(paste("No new data was added to",output_file))
       }
     } else {
+      if(!dir.exists(outdir)) {
+        dir.create(outdir,recursive = TRUE)
+      }
       fwrite(csv_data,file=output_file,na="",sep=";")
       message(paste(nrow(csv_data),"lines written to",output_file))
     }
@@ -199,4 +218,4 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   
 }
 
-create_linking_table(args$genome,args$chromosomes,args$biosources,args$type,args$atactype,args$marks,args$output)
+create_linking_table(args$genome,args$chromosomes,args$biosources,args$type,args$atactype,args$marks,args$directory,args$output)
