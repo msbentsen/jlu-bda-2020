@@ -64,8 +64,8 @@ def main():
     # biosources and transcription factors  and safe every column in a set to remove duplicates
     # set variable linking_table_exist to True
     try:
-        lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/linking_table.csv'), sep=';',
-                         usecols=['genome', 'epigenetic_mark', 'biosource_name'])
+        lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'linking_table.csv'),
+                         sep=';', usecols=['genome', 'epigenetic_mark', 'biosource_name'])
         lt_genomes = set(lt.values[:, 0])
         lt_tfs = [x.upper() for x in set(lt.values[:, 1][lt.values[:, 1] != ('dnasei' or 'dna accessibility')])]
         lt_biosources = set(x for x in lt.values[:, 2] if x in biosource_choices)
@@ -165,7 +165,7 @@ def main():
         # if yes and exist is False, notify that there is no data for the submitted combination of genome, biosource and
         # transcription factor and exit the program
         if scores:
-            resultframe = scripts.analyse_main.Main(genome=args.genome, width=args.width).mainloop(data=scores)
+            resultframe = scripts.analyse_main.Main(n_comps=args.component_size,genome=args.genome, width=args.width).mainloop(data=scores)
             print(resultframe)
 
         elif exist:
