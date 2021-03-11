@@ -158,7 +158,7 @@ def read_linkage_table(linkage_table_path):
     :return: linkage_frame: A data frame containing all information for
              forward/reverse reads files in need of merging
     """
-    full_lf = pd.read_csv(linkage_table_path)
+    full_lf = pd.read_csv(linkage_table_path, sep=';')
     linkage_frame = full_lf.loc[(full_lf['technique'] == 'atac-seq') &
                                 ((full_lf['filename'].str.contains('forward')) |
                                  (full_lf['filename'].str.contains('reverse')))]
