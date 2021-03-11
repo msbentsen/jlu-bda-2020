@@ -70,6 +70,8 @@ convert_file() {
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
 		# TODO: header entfernen
+			tail -n +2 "$filename.$file_extension" > temp
+			mv temp "$filename.$file_extension"
 			bedGraphToBigWig "$file_name.$file_extension" \
 				"$4/$3.chrom.sizes" "$file_name.bw"
 
@@ -124,7 +126,7 @@ merge_chunks "$source_path"
 # to convert it to the proper filetype
 #===============================================================================
 while IFS=";" read -r experiment_id	genome	biosource	technique	\
-	epigenetic_mark	filename	data_type	format remaining
+	epigenetic_mark chromosome	filename	data_type	format remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
@@ -138,6 +140,6 @@ do
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
-	,$epigenetic_mark,$new_filename,$data_type,$format, $remaining"\
+	,$epigenetic_mark,$chromosome,$new_filename,$data_type,$format,$remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")

@@ -24,7 +24,7 @@ csv_name=$4
 new_link=$dest_path/$csv_name
 
 headers=$(head -n1 "$csv_path")
-echo "${headers:0:77}filepath,${headers:77}" > "$new_link"
+echo "${headers:0:88}filepath,${headers:88}" > "$new_link"
 
 
 #===============================================================================
@@ -34,7 +34,7 @@ echo "${headers:0:77}filepath,${headers:77}" > "$new_link"
 
 atac="" # used to ensure dnase-seq also land in the proper atac-seq folder
 while IFS=";" read -r experiment_id	genome	biosource	technique	\
-	epigenetic_mark	filename	data_type	remaining
+	epigenetic_mark	chromosome filename	data_type	remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
@@ -58,7 +58,7 @@ do
 	newfile="$new_path/$filename"
 	mv "$sourcefile" "$newfile"
 	echo "$experiment_id,$genome,$biosource,$technique,$epigenetic_mark,\
-	$filename,$data_type,$newfile,$remaining" >> "$new_link"
+	$chromosome,$filename,$data_type,$newfile,$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")
 
 
