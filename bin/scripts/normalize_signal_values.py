@@ -39,7 +39,7 @@ def normalize_all(linkage_table_path):
     :param linkage_table_path: String with path to linkage table .csv
            file containing the files that are part of the current analysis run.
     """
-    linkage_table = pd.read_csv(linkage_table_path)
+    linkage_table = pd.read_csv(linkage_table_path, sep=';')
     file_paths = list(linkage_table["file_path"])
     column_names= list(linkage_table["format"])
     log_file_paths = []
