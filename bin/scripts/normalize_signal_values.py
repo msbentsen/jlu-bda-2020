@@ -195,7 +195,16 @@ def min_max_scale_file(file_path, log_file_path, min_val,
         idx = get_value_index(column_names)
         cnt = 0
 
+        # Check if file has head and if so copy first line from current file
+        # to tmp file and then start printing files with values
+        with open(file_path, 'r') as file:
+            first_line = file.readline()
+        skip_rows = False if is_float(first_line.split('\t')[idx]) else True
+
         with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
+            if skip_rows:
+                tmp_file.write(file.readline())
+
             for line in file:
                 line_split = line.strip().split("\t")
                 line_split[idx] = str(min_max_values[cnt])
