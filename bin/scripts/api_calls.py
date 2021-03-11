@@ -161,7 +161,7 @@ def getRawData(checked_data):
             print(path_for_tf)
             #secure that path exists
             if os.path.exists(path_for_tf):
-                csvfile = open(path_for_tf+"\\"+tf+".csv") 
+                csvfile = open(os.path.join(path_for_tf,tf+".csv"))
                 data = list(csv.reader(csvfile, delimiter=","))
                 csvfile.close()
                 x = []
