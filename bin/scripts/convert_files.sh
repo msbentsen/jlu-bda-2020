@@ -63,7 +63,7 @@ validate_filetype () {
 convert_file() {
 	local file_extension=${1##*.}
 	local file_name=${1%.*}
-	if [ "$2" == "bigwig" ] | [ "$2" == "bw" ]; then
+	if [ "$2" == "bigwig" ] || [ "$2" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
 			cut --fields 1-3,7 "$1" > "$file_name.bedgraph"
 			file_extension="bedgraph"
@@ -72,6 +72,8 @@ convert_file() {
 		# TODO: header entfernen
 			bedGraphToBigWig "$file_name.$file_extension" \
 				"$4/$3.chrom.sizes" "$file_name.bw"
+
+			new_filename="$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 		fi
@@ -86,8 +88,8 @@ convert_file() {
 #===============================================================================
 merge_chunks() {
 	folder=$1
-	for file in $folder/*; do
-		temp=$(basename $file)
+	for file in "$folder"/*; do
+		temp=$(basename "$file")
 		filename=${temp/_chunk*/}
 		if [[ $file == *"chunk"* ]]; then
 			if [[ $outfile != $folder/$filename ]]; then
@@ -115,7 +117,7 @@ export new_filename=""
 rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
 
 #Merge atac-seq chunks
-merge_chunks $source_path
+merge_chunks "$source_path"
 
 #===============================================================================
 # Goes through all lines of the .csv and validates the file before attempting
@@ -136,6 +138,6 @@ do
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
-	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
+	,$epigenetic_mark,$new_filename,$data_type,$format, $remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")
