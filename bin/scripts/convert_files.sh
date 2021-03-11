@@ -90,8 +90,9 @@ convert_file() {
 #===============================================================================
 merge_chunks() {
 	folder=$1
-	for file in "$folder"/*; do
-		temp=$(basename "$file")
+	for file in $(ls -v $folder); do
+		file=$folder/$file
+		temp=$(basename "$folder/$file")
 		filename=${temp/_chunk*/}
 		if [[ $file == *"chunk"* ]]; then
 			if [[ $outfile != $folder/$filename ]]; then
@@ -103,7 +104,6 @@ merge_chunks() {
 		fi
 	done
 }
-
 
 filetype=$1
 source_path=$2
