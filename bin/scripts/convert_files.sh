@@ -140,7 +140,7 @@ do
 	source_file="$out_path/$new_filename"
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path" "$out_path"
 
-	echo "$experiment_id;$genome;$biosource;$technique	\
-	;$epigenetic_mark;$chromosome;$new_filename;$data_type;$format;$remaining"\
+	echo "$experiment_id;$genome;$biosource;$technique\
+;$epigenetic_mark;$chromosome;$new_filename;$data_type;$format;$remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")
