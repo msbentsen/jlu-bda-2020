@@ -105,7 +105,15 @@ def log_scale_file(file_path, column_names=None):
 
     else:
         idx = get_value_index(column_names)
-        signal_values = numpy.loadtxt(file_path, usecols=[idx])
+
+        #check if file has a header that would interfere with using
+        # numpy.loadtxt() and skip first row in file if needed
+        with open(file_path, 'r') as file:
+            first_line = file.readline()
+        skip_rows = 0 if is_float(first_line.split('\t')[idx]) else 1
+
+        signal_values = numpy.loadtxt(file_path, usecols=[idx],
+                                      skiprows=skip_rows)
         log_values = numpy.log(signal_values)
         log_values = [str(value) + "\n" for value in log_values]
 
@@ -187,7 +195,16 @@ def min_max_scale_file(file_path, log_file_path, min_val,
         idx = get_value_index(column_names)
         cnt = 0
 
+        # Check if file has head and if so copy first line from current file
+        # to tmp file and then start printing files with values
+        with open(file_path, 'r') as file:
+            first_line = file.readline()
+        skip_rows = False if is_float(first_line.split('\t')[idx]) else True
+
         with open(file_path, 'r') as file, open(tmp_file_path, 'w') as tmp_file:
+            if skip_rows:
+                tmp_file.write(file.readline())
+
             for line in file:
                 line_split = line.strip().split("\t")
                 line_split[idx] = str(min_max_values[cnt])
@@ -220,13 +237,31 @@ def is_big_wig(file_path):
     Method checks if a file has bigWig format or not.
 
     :param file_path: String representing path to file
-    :return: Boolean value. True if file has bigWig format, False if not
+    :return: True if file has bigWig format, False if not
     """
     try:
-        bw = pyBigWig.open(file_path)
-        is_bw = bw.isBigWig()
-        bw.close()
-    except:
-        is_bw = False
+        file_ext = os.path.splitext(file_path)[1].lower()
+        if file_ext == '.bw' or file_ext == '.bigwig':
+            bw = pyBigWig.open(file_path)
+            is_bw = bw.isBigWig()
+            bw.close()
+            return is_bw
+        else:
+            return False
+    except RuntimeError:
+        return False
+    # option for logging here
 
-    return is_bw
+
+def is_float(value):
+    """
+    Checks if a string value can be converted to float.
+
+    :param value: String to be checked
+    :return: True, if value can be converted to float, False, if not
+    """
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
