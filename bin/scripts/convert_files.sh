@@ -13,19 +13,8 @@
 #  NOTES:  ---
 #  AUTHOR:  Jonathan Schäfer
 #===============================================================================
-filetype=$1
-source_path=$2
-out_path=$3
-chrom_path=$4
-csv_name=$5
 
-new_link=$out_path/$csv_name
-touch "$new_link"
-export new_filename=""
 
-# Strip .txt ending of downloaded files
-
-rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
 #==== Function =================================================================
 #  Name: validate_file
 #  Description: Validates that the file extension of a file fits the content of
@@ -70,7 +59,7 @@ validate_filetype () {
 #  $1 = file to convert
 #  §2 = filetype to convert to
 #  $3 = genome of the filecontent, needed for chrom.sizes
-#=============================================================	==================
+#===============================================================================
 convert_file() {
 	local file_extension=${1##*.}
 	local file_name=${1%.*}
@@ -80,6 +69,7 @@ convert_file() {
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
+		# TODO: header entfernen
 			bedGraphToBigWig "$file_name.$file_extension" \
 				"$4/$3.chrom.sizes" "$file_name.bw"
 		else
@@ -88,6 +78,44 @@ convert_file() {
 	fi
 }
 
+
+#==== Function =================================================================
+#  Name: merge_chunks
+#  Description: merges Atac-seq file chunks into one file
+#  $1 = input folder
+#===============================================================================
+merge_chunks() {
+	folder=$1
+	for file in $folder/*; do
+		temp=$(basename $file)
+		filename=${temp/_chunk*/}
+		if [[ $file == *"chunk"* ]]; then
+			if [[ $outfile != $folder/$filename ]]; then
+				outfile=$folder/$filename
+				# TODO: echo "outfile: $outfile" Logging
+				head -n1 "$file" >> "$outfile"
+			fi
+			awk 'FNR>1' "$file" >> "$outfile"
+		fi
+	done
+}
+
+
+filetype=$1
+source_path=$2
+out_path=$3
+chrom_path=$4
+csv_name=$5
+
+new_link=$out_path/$csv_name
+touch "$new_link"
+export new_filename=""
+
+# Strip .txt ending of downloaded files
+rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
+
+#Merge atac-seq chunks
+merge_chunks $source_path
 
 #===============================================================================
 # Goes through all lines of the .csv and validates the file before attempting
@@ -111,10 +139,3 @@ do
 	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")
-
-
-filetype=$1
-source_path=$2
-out_path=$3
-chrom_path=$4
-csv_name=$5
