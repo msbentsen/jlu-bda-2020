@@ -44,20 +44,19 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
     name <- metadata$name
     message(name)
     
-    filenames <- apply(expand.grid(name,chrs),1,function(x){
-      dots <- strsplit(x,".",fixed=TRUE)[[1]]
+    return_list <- apply(expand.grid(name,chrs),1,function(x) {
+      
+      dots <- strsplit(x[1],".",fixed=TRUE)[[1]]
       mylen <- length(dots)
       if(mylen > 1) {
         tmp <- dots[mylen]
         dots[mylen] <- x[2]
         dots[mylen+1] <- tmp
-        return(paste(dots,collapse="."))
+        filename <- paste(dots,collapse=".")
       } else {
-        return(paste(x,collapse="."))
+        filename <- paste(x,collapse=".")
       }
-    })
-    
-    return_list <- lapply(filenames,function(filename) { 
+      
       e <- metadata$`_id`
       sample_info <- metadata$sample_info
       extra <- metadata$extra_metadata
@@ -67,6 +66,7 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
         biosource=tolower(metadata$sample_info$biosource_name),
         technique=tolower(metadata$technique),
         epigenetic_mark=tolower(metadata$epigenetic_mark),
+        chromosome=x[2],
         filename,
         data_type=metadata$data_type,
         format=metadata$format,
@@ -77,7 +77,9 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
         as.data.table(extra)
       )
       return(meta)
+      
     })
+    
     return(return_list)
   }
   
