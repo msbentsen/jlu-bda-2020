@@ -19,64 +19,80 @@ class GmFit:
         
         Parameters
         ----------
-        loc : location of the normal distribution (X/Y)
-        stdw : standard deviation
-        size : size
+        loc: TYPE: int
+            location of the normal distribution (X/Y)
+        stdw: TYPE: float64
+            standard deviation
+        size: TYPE: int
+            size
 
         Returns
         -------
-        ndist : normal distribution 
+        ndist: TYPE: Array of float64
+            normal distribution 
         """
-        
+        #generate normal distribution
         ndist = np.random.normal(loc, stdw, size)
         
         return (ndist)
     
     #Make intervalls to compare original distribution with generated distribution
-    def getIntervalls(self, ndist, rows, columns):
+    def getIntervalls(self, ndist, intervall_size):
         """
         This Method calculates Intervalls of a distribution. Therefore the size is defined 
         by rows and columns
 
         Parameters
         ----------
-        ndist : Distribution to calculate the intervalls
-        rows : Number of rows
-        columns : Number of columns
+        ndist: TYPE: Array of float64 
+            Distribution to calculate the intervalls
+        rows: TYPE: int
+            Number of rows
+        columns: TYPE: int
+            Number of columns
 
         Returns
         -------
-        intervalls : as 2D array
+        intervalls: TYPE: list of int
+            
 
         """
-        
-        if columns % columns == 0:
-            perlabel = columns ** (1/2)
-            n_label = int(perlabel)
+        #check if column size useable 
+        if intervall_size % 2 == 0:
+            #calculating stepsize
+            size = intervall_size ** (1/2)
+            n_label = int(size)
         else:
-            print("n components should not dividable by 2!")
+            raise Exception("intervall_size should be dividable by 2!")
         
-        size = rows/perlabel
+        #initialysing variables
         intervalls = []
         lowX = 0
         lowY = 0
         
+        #loop trough all intervalls by x and y component in calculated stepsize
+        #By defining lowest and highest score of an intervall
         for x in range(0,n_label):
+            #define new highscore of the intervall component
             highX = lowX + size
             for y in range(0,n_label):
+                #define new highscore of the intervall component
                 highY = lowY + size 
                 count = 0
-            
+                
+                #loop trough all data points and count how many in the current intervall component
                 for i in ndist:
                     #print(i)
-                    if (i[0] <highX and i[0]>lowX) and (i[1] <highY and i[1]>lowY):
+                    if (i[0] < highX and i[0] > lowX) and (i[1] < highY and i[1] > lowY):
                         count += 1
-                    # print(i)
             
-            # intervall = [low,high,count]
+                #append counted number
                 intervalls.append(count)
+                #define new lowest score 
                 lowY = lowY + size
+            #reset lowest score of x-component
             lowY = 0
+            #define new lowest score
             lowX = lowX + size
         
         return (intervalls)
@@ -90,14 +106,20 @@ class GmFit:
 
         Parameters
         ----------
-        distribution : Distribution to be analyzed (numpy array of float64 vectors)
-        n_cgauss : number of gaussian distributions to be fitted (number o components)
+        distribution: Type: Array of float64 
+            Distribution to be analyzed
+        n_cgauss: Type: int 
+            number of gaussian distributions to be fitted (number of components)
         Returns
         -------
-        loc : List of locations of the fitted components
-        n_stdwX : List of standard deviations of the x-values
-        n_stdwY : List of standard deviations of the y-values
-        weight : List of the weigts of the fitted components
+        loc: TYPE: Array of float64 
+            Array of locations of the fitted components
+        n_stdwX: TYPE: list of float64
+            List of standard deviations of the x-values
+        n_stdwY: TYPE: list of float64 
+            List of standard deviations of the y-values
+        weight: TYPE: Array of float64 
+            List of the weigts of the fitted components
 
         """
         
@@ -110,10 +132,12 @@ class GmFit:
         loc = gmm.means_
         covariances = gmm.covariances_
         weight = gmm.weights_
-        #print(covariances)
-        for i in range(0, (len(covariances))):
+
+        #get variables of each components
+        for i in range(0, len(covariances)):
             
             dist_matrix = covariances[i]
+            #calculate standard deviations from dispersion matrices
             stdwX = ((dist_matrix[0])[0]) ** (1/2)
             stdwY = ((dist_matrix[1])[1]) ** (1/2)
             
@@ -128,57 +152,64 @@ class GmFit:
     #1 - n_components.
     def getDifference(self, distribution, n_components):
         """
-        Method ro calculate the space between a input distribution and genaerated 
+        Method to calculate the space between a input distribution and generated 
         distributiuons. Therefore gaussian distibutions called components, are fit in the original distribution. 
-        The parameters of the componets is then used to generate a new distribution.
-        The new distribution is then compared with the new distribution. To do that 
-        the apce between the original and new distribution is calculated.
+        The parameters of the components is then used to generate a new distribution.
+        Afterwards the new distribution is compared with the new distribution. To do that 
+        the space between the original and new distribution is calculated.
         To evaluate the best fit (number of componets) the latter is repeated for 
         n = 0 to n = n_components.
         
         Parameters
         ----------
-        distribution : original distribution from ATAC and CHIP data (numpy array of float64 vectors)
-        n_components : max number of components to be fit into the original 
-                       distribution
+        distribution: TYPE: Array of float64
+            Original distribution from ATAC and CHIP data (numpy array of float64 vectors)
+        n_components: TYPE: int
+            Max number of components to be fit into the original 
+            distribution
 
         Returns
         -------
-        all_diffs : List of all calculated differences
+        all_diffs: TYPE: list of float
+            List of all calculated differences
 
         """
         
         all_diffs =[]
         size = len(distribution)
         
+        #create distributions from 1 component to n_components
         for z in range(1, n_components+1):
-        
-            n_loc, n_stdwX, n_stdwY, n_weights = GmFit().emAnalyse(distribution, n_cgauss=z)
+            #calculate parameters to generate the distributions
+            n_loc, n_stdwX, n_stdwY, n_weights = GmFit.emAnalyse(self, distribution, n_cgauss=z)
             reference_distX = []
             reference_distY = []
         
+            #generate reference distribution from parameter lists 1D
             for k in range(0, len(n_loc)):
-                
+
                 component_size = int(size * (n_weights[k]))
                 component_locX = int((n_loc[k])[0])
                 component_locY = int((n_loc[k])[1])
                 component_stdwX = n_stdwX[k]
                 component_stdwY = n_stdwY[k]
-                component_distX = GmFit().normaldist(component_locX, component_stdwX, component_size)
-                component_distY = GmFit().normaldist(component_locY, component_stdwY, component_size)
+                component_distX = GmFit.normaldist(self, component_locX, component_stdwX, component_size)
+                component_distY = GmFit.normaldist(self, component_locY, component_stdwY, component_size)
                 
                 reference_distX.extend(component_distX)
                 reference_distY.extend(component_distY)
         
+            #combine X and Y values
             reference_distribution= []
             for i in range(0, len(reference_distX)):
                 reference_distribution.append([reference_distX[i],reference_distY[i]])
             
-            # GmFit().contourPlot(reference_distribution)
+            #get intervalls of ori distribution and reference distribution
             diff = 0
-            ori_intervalls = GmFit().getIntervalls(distribution, 100, 100)
-            new_intervalls = GmFit().getIntervalls(reference_distribution, 100, 100)
+            ori_intervalls = GmFit.getIntervalls(self, distribution, 100)
+            new_intervalls = GmFit.getIntervalls(self, reference_distribution, 100)
             
+            #calculate differences
             for j in range(len(ori_intervalls)):
                 raw_diff = (ori_intervalls[j])-(new_intervalls[j])
                 single_diff = (raw_diff**2)**(1/2)
@@ -192,18 +223,23 @@ class GmFit:
     #Evaluate number of components
     def evaluate_by_cutoff(self, all_diffs):
         """
+        NOT USED IN THE FINAL VERSION
+        =============================
+        
         Evaluate components from calculated differences from 
         method getDifference
         
         Parameters
         ----------
-        all_diffs: List of all differences between generated distibutions 
-                   and original distribution.
+        all_diffs: TYPE: list of float 
+            List of all differences between generated distibutions 
+            and original distribution.
 
         Returns
         -------
-        rates: List of all calculated rates
-        count: evaluated number of components
+        rates: TYPE: List of all calculated rates
+        count: TYPE: int
+            evaluated number of components
         """
         
         rates = []
@@ -246,20 +282,24 @@ class GmFit:
 
         Parameters
         ----------
-        all_diffs : Evaluate components from calculated differences from 
-        method getDifference
+        all_diffs: TYPE: list of float
+            Evaluate components from calculated differences from 
+            method getDifference
 
         Returns
         -------
-        n : number of components
+        n: TYPE: int
+            number of components
 
         """
         x = np.arange(1,(len(all_diffs))+1,1)
         y = all_diffs
-        kneedle = KneeLocator(x, y, S=1.0, curve="convex", direction="decreasing")
+        try:
+            kneedle = KneeLocator(x, y, S=1.0, curve="convex", direction="decreasing")
         
-        n = kneedle.knee
-        
+            n = kneedle.knee
+        except:
+            raise Exception("No knee found, coud not determine number of components. Try to set components manually")
         return n
         
 
