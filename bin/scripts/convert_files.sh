@@ -71,10 +71,6 @@ convert_file() {
 		if [ "$file_extension" == "bedgraph" ]; then
 			tail -n +2 "$file_name.$file_extension" > "$5/tempfile"
 			mv "$5/tempfile" "$file_name.$file_extension"
-			bedGraphToBigWig "$file_name.$file_extension" \
-				$4/$3.chrom.sizes "$file_name.bw"
-
-			new_filename="$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 		fi
@@ -121,7 +117,7 @@ rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
 merge_chunks "$source_path"
 
 headers=$(head -n 1 "$source_path/$csv_name")
-echo "$headers" > "$new_link"
+echo "${headers:0:87}file_path;${headers:87}" > "$new_link"
 #===============================================================================
 # Goes through all lines of the .csv and validates the file before attempting
 # to convert it to the proper filetype
@@ -139,8 +135,8 @@ do
 	cp "$source_file" "$out_path/$new_filename"
 	source_file="$out_path/$new_filename"
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path" "$out_path"
-
-	echo "$experiment_id;$genome;$biosource;$technique\
-;$epigenetic_mark;$chromosome;$new_filename;$data_type;$format;$remaining"\
+	filepath="$out_path/$new_filename"
+	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
+$chromosome;$new_filename;$data_type;$filepath;$format;$remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")

@@ -24,7 +24,7 @@ csv_name=$4
 new_link=$dest_path/$csv_name
 
 headers=$(head -n1 "$csv_path")
-echo "${headers:0:88}filepath,${headers:88}" > "$new_link"
+echo "$headers" > "$new_link"
 
 
 #===============================================================================
