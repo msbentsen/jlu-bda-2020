@@ -1,5 +1,5 @@
 #!/bin/env bash
-
+# TODO: wenn file schon richtig, konvertierung skippen
 #===============================================================================
 #
 #  FILE:  convert.sh
@@ -13,17 +13,8 @@
 #  NOTES:  ---
 #  AUTHOR:  Jonathan Schäfer
 #===============================================================================
-filetype=$1
-source_path=$2
-chrom_path=$3
-csv_name=$4
 
-new_link=$source_path/$csv_name.new
-touch "$new_link"
-export new_filename=""
 
-# Strip .txt ending of downloaded files
-rename '.txt' '' "$source_path/*"
 #==== Function =================================================================
 #  Name: validate_file
 #  Description: Validates that the file extension of a file fits the content of
@@ -46,14 +37,18 @@ validate_filetype () {
 		;;
 	*)
 		echo "unrecognized file format"
-		filetype=""
+		new_filename=$1 #filename stays the same
+		return 2
 		;;
 	esac
-	if [ "$filetype" != "$file_extension" ]; then
+	if [ "$filetype" != "$file_extension" ]; then #filename gets new ending
 		new_filename=$(basename "$1")
 		new_filename="${new_filename%.*}.$filetype"
 		return 1
+	else
+		new_filename=$1 # filename stays the same
 	fi
+
 	return 0
 }
 
@@ -64,24 +59,65 @@ validate_filetype () {
 #  $1 = file to convert
 #  §2 = filetype to convert to
 #  $3 = genome of the filecontent, needed for chrom.sizes
-#=============================================================	==================
+#===============================================================================
 convert_file() {
 	local file_extension=${1##*.}
 	local file_name=${1%.*}
-	if [ "$2" == "bigwig" ] | [ "$2" == "bw" ]; then
+	if [ "$2" == "bigwig" ] || [ "$2" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
 			cut --fields 1-3,7 "$1" > "$file_name.bedgraph"
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
+		# TODO: header entfernen
 			bedGraphToBigWig "$file_name.$file_extension" \
 				"$4/$3.chrom.sizes" "$file_name.bw"
+
+			new_filename="$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 		fi
 	fi
 }
 
+
+#==== Function =================================================================
+#  Name: merge_chunks
+#  Description: merges Atac-seq file chunks into one file
+#  $1 = input folder
+#===============================================================================
+merge_chunks() {
+	folder=$1
+	for file in "$folder"/*; do
+		temp=$(basename "$file")
+		filename=${temp/_chunk*/}
+		if [[ $file == *"chunk"* ]]; then
+			if [[ $outfile != $folder/$filename ]]; then
+				outfile=$folder/$filename
+				# TODO: echo "outfile: $outfile" Logging
+				head -n1 "$file" >> "$outfile"
+			fi
+			awk 'FNR>1' "$file" >> "$outfile"
+		fi
+	done
+}
+
+
+filetype=$1
+source_path=$2
+out_path=$3
+chrom_path=$4
+csv_name=$5
+
+new_link=$out_path/$csv_name
+touch "$new_link"
+export new_filename=""
+
+# Strip .txt ending of downloaded files
+rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
+
+#Merge atac-seq chunks
+merge_chunks "$source_path"
 
 #===============================================================================
 # Goes through all lines of the .csv and validates the file before attempting
@@ -96,16 +132,12 @@ do
 
 	source_file="$source_path/$filename"
 
-	if validate_filetype "$filename" "$format"; then
-		mv "$source_file" "$source_path/$new_filename"
-	 	source_file="$source_path/$new_filename"
-	fi
+	validate_filetype "$filename" "$format"
+	cp "$source_file" "$out_path/$new_filename"
+	source_file="$out_path/$new_filename"
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
-	,$epigenetic_mark,$filename,$data_type,$format, $remaining"\
+	,$epigenetic_mark,$new_filename,$data_type,$format, $remaining"\
 	>> "$new_link"
 done < <(tail --lines +2 "$source_path/$csv_name")
-
-#replace out of date linking table with up to date one
-mv "$new_link" "$source_path/$csv_name"

@@ -7,17 +7,21 @@ from scripts.generate_pickle import parse
 
 
 class DataConfig:
-    """Contains configuration data for the pull_data function.    """
-
-    def __init__(self, genome, biosource, epigenetic_mark,
-                 output_path, csv_name, chromsizes):
+    """Contains configuration data for the pull_data function.
+    - chromsizes = path to folder of chromsizes
+    - type = type of data (signal/peak)
+      """
+    def __init__(self, genome, chromosome, biosource, epigenetic_mark,
+                 output_path, csv_name, chromsizes, datatype):
         self.genome = " ".join(genome)
+        self.chromosome = " ".join(chromosome)
         self.biosource = " ".join(biosource)
         self.epigenetic_mark = " ".join(epigenetic_mark)
         self.binpath = os.path.abspath(os.path.dirname(__file__))
         self.outpath = output_path
         self.csvname = csv_name
         self.chromsizes = chromsizes
+        self.type = datatype
         self.logfile = self.setup()
 
         logging.info(self.genome + " " + self.biosource +
@@ -28,10 +32,13 @@ class DataConfig:
         Sets up logging and Ensures proper filestructure is given.
         """
         time = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-
         temp = os.path.join(self.outpath, "data", "temp")
         result = os.path.join(self.outpath, "results")
         logs = os.path.join(self.outpath, "logs")
+        download = os.path.join(self.outpath, "data", "download")
+
+        if not os.path.exists(download):
+            os.makedirs(download)
         if not os.path.exists(temp):
             os.makedirs(temp)
         if not os.path.exists(result):
@@ -39,8 +46,9 @@ class DataConfig:
         if not os.path.exists(logs):
             os.makedirs(logs)
 
-        logfile = os.path.join(logs, time, "_generate_data.log")
-        logging.basicConfig(logfile=logfile, level=logging.INFO)
+        logname = time + "_generate_data.log"
+        logfile = os.path.join(logs, logname)
+        logging.basicConfig(filename=logfile, level=logging.INFO)
         return logfile
 
     def pull_data(self):
@@ -49,7 +57,7 @@ class DataConfig:
         self.generate_csv()
         self.download_data()
         self.validate_convert_files()
-        self.merge_forward_reversre()
+        self.merge_forward_reverse()
         self.normalize()
         self.sort_files()
         self.generate_dictionaries()
@@ -62,10 +70,14 @@ class DataConfig:
         downloaded.
         """
         tool = os.path.join(self.binpath, "scripts", "csv.r")
+        path = os.path.join(self.outpath, "data", "download")
         rc = subprocess.call(
             [tool, "-b", self.biosource,
              "-g", self.genome,
-             "-m", self.epigenetic_mark])
+             "-c", self.chromosome,
+             "-m", self.epigenetic_mark,
+             "-d", path,
+             "-o", self.csvname])
         if rc != 0:
             logging.error("error generating .csv")
             raise Exception("csv.r could not create CSV")
@@ -78,8 +90,8 @@ class DataConfig:
 
         """
         tool = os.path.join(self.binpath, "scripts", "export_from_csv.r")
-        csv = os.path.join(self.outpath, "data", self.csvname)
-        outdir = os.path.join(self.outpath, "data", "temp")
+        csv = os.path.join(self.outpath, "data", "download", self.csvname)
+        outdir = os.path.join(self.outpath, "data", "download")
 
         rc = subprocess.call([tool, "-i", csv, "-o", outdir])
         if rc != 0:
@@ -93,16 +105,18 @@ class DataConfig:
         convert_files.sh takes a fileformat and a path with the
         convertable files
         """
-        tool = os.path.join(self.binpath, "scripts", "convert_files.r")
-        indir = os.path.join(self.outpath, "data", "temp")
+        # TODO: outpath muss whitespace escapen/ mit "" übergeben werden
+        tool = os.path.join(self.binpath, "scripts", "convert_files.sh")
+        indir = os.path.join(self.outpath, "data", "download")
+        outdir = os.path.join(self.outpath, "data", "temp")
 
         rc = subprocess.call(
-            [tool, "bigwig", indir, self.chromsizes, self.csvname])
+            [tool, "bigwig", indir, outdir, self.chromsizes, self.csvname])
         if rc != 0:
             logging.error("convert_files.sh could not convert files")
             raise Exception("convert_files.sh could not convert files")
 
-    def merge_forward_reversre(self):
+    def merge_forward_reverse(self):
         """ merge forward/reverse read files into a single .bw
 
         Calls scripts.merge_files and handles return value
@@ -111,10 +125,10 @@ class DataConfig:
         bigwigMerge = subprocess.check_output(["which", "bigWigMerge"])
         bedgraphtobigwig = subprocess.check_output(
             ["which", "bedGraphToBigWig"])
-        filepath = os.path.join(self.outpath, "data", "temp", self.csvname)
-
-        merge_all(filepath, self.chromsizes,
-                  bedgraphtobigwig, bigwigMerge, ["bedgraph"])
+        csvpath = os.path.join(self.outpath, "data", "temp", self.csvname)
+        # TODO: self.chromsizes replace with array that contains paths to direct files
+        merge_all(csvpath, self.chromsizes,
+                  bedgraphtobigwig, bigwigMerge, ["bigwig"])
 
     def sort_files(self):
         """ merge forward/reverse read files into a single .bw
@@ -122,7 +136,7 @@ class DataConfig:
         Calls scripts.merge_files and handles return value
 
         """
-        tool = os.path.join(self.binpath, "scripts", "sort_files.r")
+        tool = os.path.join(self.binpath, "scripts", "sort_files.sh")
         outdir = os.path.join(self.outpath, "data")
         indir = os.path.join(outdir, "temp")
         csv = os.path.join(indir, self.csvname)
