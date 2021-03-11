@@ -6,7 +6,7 @@ import argparse
 import os
 from argparse import RawTextHelpFormatter
 import xmlrpc.client as xc
-
+import subprocess
 
 def main():
     """
@@ -38,26 +38,33 @@ def main():
     server = xc.Server(url, encoding='UTF-8', allow_none=True)
     user_key = "anonymous_key"
 
-    genome_choices = [genome[1] for genome in server.list_genomes(user_key)[1]]
-    genome_choices.sort()
+    try:
+        genome_choices = [genome[1] for genome in server.list_genomes(user_key)[1]]
+        genome_choices.sort()
 
-    biosource_choices = [biosource[1] for biosource in server.list_biosources(None, user_key)[1]]
-    biosource_choices.append('all')
-    biosource_choices.append('downloaded')
-    biosource_choices.sort()
+        biosource_choices = [biosource[1] for biosource in server.list_biosources(None, user_key)[1]]
+        biosource_choices.append('all')
+        biosource_choices.append('downloaded')
+        biosource_choices.sort()
 
-    tf_choices = [tf[1] for tf in server.list_epigenetic_marks(None, user_key)[1]]
-    tf_choices.append('all')
-    tf_choices.append('downloaded')
-    tf_choices = [x for x in tf_choices if x not in ["DnaseI", "DNA Accessibility"]]
-    tf_choices.sort()
+        tf_choices = [tf[1] for tf in server.list_epigenetic_marks(None, user_key)[1]]
+        tf_choices.append('all')
+        tf_choices.append('downloaded')
+        tf_choices = [x for x in tf_choices if x not in ["DnaseI", "DNA Accessibility"]]
+        tf_choices.sort()
 
-    chromosomes = {}
-    chr_choices = []
-    for genome in genome_choices:
-        chr = [x[0] for x in server.chromosomes(genome, user_key)[1]]
-        chr_choices += chr
-        chromosomes[genome] = chr
+        chromosomes = {}
+        chr_choices = []
+        for genome in genome_choices:
+            chr = [x[0] for x in server.chromosomes(genome, user_key)[1]]
+            chr_choices += chr
+            chromosomes[genome] = chr
+    except xc.ProtocolError:
+        print('unable to connect to deepbluer')
+        biosource_choices=['GM12878']
+        tf_choices=['RELA']
+        genome_choices=['hg19']
+        chr_choices=['chr1']
 
     # if linking_table exists:
     # read in columns of the linking table that contain the names of the downloaded genomes,
@@ -119,7 +126,8 @@ def main():
 
     # if -v / --visualize was stated, call visualisation for existing results
     if args.visualize:
-        print("Aufruf Visualisierung")
+        subprocess.Popen(['python', '/home/jasmin/Dokumente/Datenanalyse/Git/jlu-bda-2020/bin/scripts/visualization_app_api_start.py'])
+        subprocess.call(['ng', 'serve', '--live-reload'], cwd = '/home/jasmin/Dokumente/Datenanalyse/Git2/jlu-bda-2020/Visualisation')
 
     # compute analysis
     else:
@@ -151,10 +159,10 @@ def main():
         # save parameter that need to be downloaded in the dictionary download_dict
 
         # download data from download_dict
-        requested_data = generate_data.DataConfig(args.genome, args.biosource, args.tf, args.output_path,
-                                                  'linkage_table.csv', os.path.abspath
-                                                  (os.path.join(os.path.dirname(__file__), '../data/chromsizes/')))
-        requested_data.pull_data()
+        #requested_data = generate_data.DataConfig(args.genome, args.biosource, args.tf, args.output_path,
+        #                                          'linkage_table.csv', os.path.abspath
+        #                                          (os.path.join(os.path.dirname(__file__), '../data/chromsizes/')))
+        #requested_data.pull_data()
 
         # run the script score.py and store the calculated scores in the dictionary 'scores'
         scores, exist = scripts.score.findarea(args.width, args.genome, args.biosource, args.tf, args.redo_analysis)
@@ -165,11 +173,14 @@ def main():
         # if yes and exist is False, notify that there is no data for the submitted combination of genome, biosource and
         # transcription factor and exit the program
         if scores:
-            resultframe = scripts.analyse_main.Main(n_comps=args.component_size,genome=args.genome, width=args.width).mainloop(data=scores)
+            resultframe = scripts.analyse_main.TF_analyser(n_comps=args.component_size,genome=args.genome, width=args.width).mainloop(data=scores)
             print(resultframe)
 
-        elif exist:
-            pass
+        if scores or exist:
+            subprocess.Popen(['python',
+                              '/home/jasmin/Dokumente/Datenanalyse/Git/jlu-bda-2020/bin/scripts/visualization_app_api_start.py'])
+            subprocess.call(['ng', 'serve', '--live-reload'],
+                            cwd='/home/jasmin/Dokumente/Datenanalyse/Git2/jlu-bda-2020/Visualisation')
 
         else:
             raise Exception(
