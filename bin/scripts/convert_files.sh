@@ -69,11 +69,10 @@ convert_file() {
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
-		# TODO: header entfernen
-			tail -n +2 "$filename.$file_extension" > temp
-			mv temp "$filename.$file_extension"
+			tail -n +2 "$file_name.$file_extension" > "$5/tempfile"
+			mv "$5/tempfile" "$file_name.$file_extension"
 			bedGraphToBigWig "$file_name.$file_extension" \
-				"$4/$3.chrom.sizes" "$file_name.bw"
+				$4/$3.chrom.sizes "$file_name.bw"
 
 			new_filename="$file_name.bw"
 		else
@@ -98,7 +97,7 @@ merge_chunks() {
 			if [[ $outfile != $folder/$filename ]]; then
 				outfile=$folder/$filename
 				# TODO: echo "outfile: $outfile" Logging
-				head -n1 "$file" >> "$outfile"
+				head -n1 "$file" > "$outfile"
 			fi
 			awk 'FNR>1' "$file" >> "$outfile"
 		fi
@@ -121,6 +120,8 @@ rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
 #Merge atac-seq chunks
 merge_chunks "$source_path"
 
+headers=$(head -n 1 "$source_path/$csv_name")
+echo "$headers" > "$new_link"
 #===============================================================================
 # Goes through all lines of the .csv and validates the file before attempting
 # to convert it to the proper filetype
@@ -128,6 +129,7 @@ merge_chunks "$source_path"
 while IFS=";" read -r experiment_id	genome	biosource	technique	\
 	epigenetic_mark chromosome	filename	data_type	format remaining
 do
+	echo $filename
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
 	fi
@@ -137,7 +139,7 @@ do
 	validate_filetype "$filename" "$format"
 	cp "$source_file" "$out_path/$new_filename"
 	source_file="$out_path/$new_filename"
-	convert_file "$source_file" "$filetype" "$genome" "$chrom_path"
+	convert_file "$source_file" "$filetype" "$genome" "$chrom_path" "$out_path"
 
 	echo "$experiment_id,$genome,$biosource,$technique	\
 	,$epigenetic_mark,$chromosome,$new_filename,$data_type,$format,$remaining"\
