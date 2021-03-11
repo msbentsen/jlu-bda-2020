@@ -11,6 +11,7 @@ class DataConfig:
     - chromsizes = path to folder of chromsizes
     - type = type of data (signal/peak)
       """
+
     def __init__(self, genome, chromosome, biosource, epigenetic_mark,
                  output_path, csv_name, chromsizes, datatype):
         self.genome = " ".join(genome)
@@ -127,8 +128,8 @@ class DataConfig:
             ["which", "bedGraphToBigWig"])
         csvpath = os.path.join(self.outpath, "data", "temp", self.csvname)
         # TODO: self.chromsizes replace with array that contains paths to direct files
-        merge_all(csvpath, self.chromsizes,
-                  bedgraphtobigwig, bigwigMerge, ["bigwig"])
+        merge_all(csvpath, self.chromsizes, ["bigwig"],
+                  bedgraphtobigwig, bigwigMerge)
 
     def sort_files(self):
         """ merge forward/reverse read files into a single .bw
