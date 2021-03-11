@@ -159,10 +159,10 @@ def main():
         # save parameter that need to be downloaded in the dictionary download_dict
 
         # download data from download_dict
-        #requested_data = generate_data.DataConfig(args.genome, args.biosource, args.tf, args.output_path,
-        #                                          'linkage_table.csv', os.path.abspath
-        #                                          (os.path.join(os.path.dirname(__file__), '../data/chromsizes/')))
-        #requested_data.pull_data()
+        requested_data = generate_data.DataConfig(args.genome, args.chromosome, args.biosource, args.tf, args.output_path,
+                                                  'linkage_table.csv', os.path.abspath
+                                                  (os.path.join(os.path.dirname(__file__), '../data/chromsizes/', 'bigwig')))
+        requested_data.pull_data()
 
         # run the script score.py and store the calculated scores in the dictionary 'scores'
         scores, exist = scripts.score.findarea(args.width, args.genome, args.biosource, args.tf, args.redo_analysis)
