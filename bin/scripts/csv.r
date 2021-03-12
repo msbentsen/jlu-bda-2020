@@ -199,22 +199,24 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   } else {
     # check whether CSV with given filename already exists - if yes, add new rows
     if(file.exists(output_file)) {
-      old_csv <- fread(file=output_file,header=TRUE,sep=";",colClasses=c("date_created" = "character"))
+      old_csv <- fread(file=output_file,header=TRUE,sep=";",colClasses=c("character"))
       old_filenames <- old_csv$filename
       csv_data.unique <- csv_data[!csv_data$filename %in% old_filenames]
       if(nrow(csv_data.unique) > 0) {
         csv_data <- rbind(old_csv,csv_data.unique,fill=TRUE)
+        # fwrite(csv_data.unique,file=output_file,na="",sep=";")
+        # fwrite(old_csv,file=paste(output_file,"old_csv"),na="",sep=";")
         fwrite(csv_data,file=output_file,na="",sep=";")
-        message(paste(nrow(csv_data.unique),"lines added to",output_file))
+        message(paste(nrow(csv_data.unique),"lines added to",normalizePath(output_file)))
       } else {
-        message(paste("No new data was added to",output_file))
+        message(paste("No new data was added to",normalizePath(output_file)))
       }
     } else {
       if(!dir.exists(outdir)) {
         dir.create(outdir,recursive = TRUE)
       }
       fwrite(csv_data,file=output_file,na="",sep=";")
-      message(paste(nrow(csv_data),"lines written to",output_file))
+      message(paste(nrow(csv_data),"lines written to",normalizePath(output_file)))
     }
   }
   
