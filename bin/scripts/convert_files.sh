@@ -114,7 +114,7 @@ touch "$new_link"
 export new_filename=""
 
 # Strip .txt ending of downloaded files
-rename '.txt' '' $source_path/* # TODO: error when doublequoting source_path/*
+rename s/'.txt'// $source_path/*.txt # TODO: error when doublequoting source_path/*
 
 #Merge atac-seq chunks
 merge_chunks "$source_path"

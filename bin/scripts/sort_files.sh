@@ -57,7 +57,7 @@ do
 	newfile="$new_path/$filename"
 	mv "$sourcefile" "$newfile"
 	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
-$chromosome;$filename;$data_type;$newfile;$remaining" >> "$new_link"
+$chromosome;$filename;$data_type;$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")
 
 
