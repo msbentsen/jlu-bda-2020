@@ -32,7 +32,7 @@ echo "$headers" > "$new_link"
 # sequencing technique, skipping non existing files to clean up the .csv .
 #===============================================================================
 
-atac="" # used to ensure dnase-seq also land in the proper atac-seq folder
+# used to ensure dnase-seq also land in the proper atac-seq folder
 while IFS=";" read -r experiment_id	genome	biosource	technique	\
 	epigenetic_mark	chromosome filename	data_type	remaining
 do
@@ -53,9 +53,12 @@ do
 	fi
 
 	mkdir -p "$new_path"
-	sourcefile="$source_path/$filename"
+
+	temp=$(basename $filename)
+	temp=${temp%.*}
+	sourcefile="$source_path/$temp.*"
 	newfile="$new_path/$filename"
-	mv "$sourcefile" "$newfile"
+	mv $sourcefile "$new_path"
 	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
 $chromosome;$filename;$data_type;$newfile;$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")

@@ -73,6 +73,7 @@ convert_file() {
 			mv "$5/tempfile" "$file_name.$file_extension"
 			bedGraphToBigWig "$file_name.$file_extension" \
 				$4/$3.chrom.sizes "$file_name.bw"
+			new_filename="$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 		fi
