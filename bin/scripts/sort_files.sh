@@ -53,12 +53,9 @@ do
 	fi
 
 	mkdir -p "$new_path"
-
-	temp=$(basename $filename)
-	temp=${temp%.*}
-	sourcefile="$source_path/$temp.*"
+	sourcefile="$source_path/$filename"
 	newfile="$new_path/$filename"
-	mv $sourcefile "$new_path"
+	mv "$sourcefile" "$newfile"
 	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
 $chromosome;$filename;$data_type;$newfile;$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")

@@ -139,6 +139,12 @@ do
 	source_file="$out_path/$new_filename"
 	convert_file "$source_file" "$filetype" "$genome" "$chrom_path" "$out_path"
 	filepath="$out_path/$new_filename"
+	# add .bw file
+	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
+$chromosome;$new_filename;$data_type;$filepath;$format;$remaining"\
+	>> "$new_link"
+	# add .bed file
+	new_filename="${new_filename%.*}.bed"
 	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
 $chromosome;$new_filename;$data_type;$filepath;$format;$remaining"\
 	>> "$new_link"
