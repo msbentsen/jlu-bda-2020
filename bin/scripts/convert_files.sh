@@ -71,6 +71,8 @@ convert_file() {
 		if [ "$file_extension" == "bedgraph" ]; then
 			tail -n +2 "$file_name.$file_extension" > "$5/tempfile"
 			mv "$5/tempfile" "$file_name.$file_extension"
+			bedGraphToBigWig "$file_name.$file_extension" \
+				$4/$3.chrom.sizes "$file_name.bw"
 		else
 				echo "unexpected file" # TODO: proper error handling
 		fi
