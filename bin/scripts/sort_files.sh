@@ -43,11 +43,11 @@ do
 	# lowercase comparison to ensure
 	check=$(echo "$technique" | awk '{print tolower($0)}')
 	if [ "$check" == "atac-seq" ]; then
-		new_path="$dest_path/$biosource/$technique"
+		new_path="$dest_path/$genome/$biosource/$technique"
 	elif [ "$check" == "chip-seq" ]; then
-		new_path="$dest_path/$biosource/$technique/$epigenetic_mark"
+		new_path="$dest_path/$genome/$biosource/$technique/$epigenetic_mark"
 	elif [ "$check" == "dnase-seq" ]; then
-		new_path="$dest_path/$biosource/atac-seq"
+		new_path="$dest_path/$genome/$biosource/atac-seq"
 	else
 		new_path="$dest_path/$genome/$biosource/$technique/$epigenetic_mark"
 	fi
