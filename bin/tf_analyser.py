@@ -71,7 +71,7 @@ def main():
     # biosources and transcription factors  and safe every column in a set to remove duplicates
     # set variable linking_table_exist to True
     try:
-        lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'linking_table.csv'),
+        lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'temp', 'linking_table.csv'),
                          sep=';', usecols=['genome', 'epigenetic_mark', 'biosource_name'])
         lt_genomes = set(lt.values[:, 0])
         lt_tfs = [x.upper() for x in set(lt.values[:, 1][lt.values[:, 1] != ('dnasei' or 'dna accessibility')])]
@@ -119,15 +119,17 @@ def main():
     parser.add_argument('-v', '--visualize', action='store_true',
                         help='visualization will be called for existing results')
     parser.add_argument('-cs', '--component_size', type=int, nargs='?', help='component size')
-    parser.add_argument('-o', '--output_path', default=os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
+    parser.add_argument('-o', '--output_path', default='./',
                         type=str, nargs='?', help='output path')
 
     args = parser.parse_args()
 
     # if -v / --visualize was stated, call visualisation for existing results
     if args.visualize:
-        subprocess.Popen(['python', '/home/jasmin/Dokumente/Datenanalyse/Git/jlu-bda-2020/bin/scripts/visualization_app_api_start.py'])
-        subprocess.call(['ng', 'serve', '--live-reload'], cwd = '/home/jasmin/Dokumente/Datenanalyse/Git2/jlu-bda-2020/Visualisation')
+        subprocess.Popen(['python',
+                          os.path.join(os.path.dirname(__file__), 'scripts', 'visualization_app_api_start.py')])
+        subprocess.call(['ng', 'serve', '--live-reload'],
+                        cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'visualization')))
 
     # compute analysis
     else:
@@ -159,13 +161,13 @@ def main():
         # save parameter that need to be downloaded in the dictionary download_dict
 
         # download data from download_dict
-        requested_data = generate_data.DataConfig(args.genome, args.chromosome, args.biosource, args.tf, args.output_path,
-                                                  'linkage_table.csv', os.path.abspath
-                                                  (os.path.join(os.path.dirname(__file__), '../data/chromsizes/', 'bigwig')))
+        requested_data = generate_data.DataConfig([args.genome], args.chromosome, args.biosource, args.tf, args.output_path,
+                                                  'linking_table.csv', os.path.abspath
+                                                  (os.path.join(os.path.dirname(__file__), '../data/chromsizes/')),'bigwig')
         requested_data.pull_data()
 
         # run the script score.py and store the calculated scores in the dictionary 'scores'
-        scores, exist = scripts.score.findarea(args.width, args.genome, args.biosource, args.tf, args.redo_analysis)
+        scores, exist = scripts.score.findarea(args.width, args.genome.lower(), [x.lower() for x in args.biosource], [x.lower() for x in args.tf], args.redo_analysis)
 
         # test if 'scores' is an empty dictionary
         # if not, generate plots with the script analyse_main.py
@@ -178,9 +180,9 @@ def main():
 
         if scores or exist:
             subprocess.Popen(['python',
-                              '/home/jasmin/Dokumente/Datenanalyse/Git/jlu-bda-2020/bin/scripts/visualization_app_api_start.py'])
+                              os.path.join(os.path.dirname(__file__), 'scripts', 'visualization_app_api_start.py')])
             subprocess.call(['ng', 'serve', '--live-reload'],
-                            cwd='/home/jasmin/Dokumente/Datenanalyse/Git2/jlu-bda-2020/Visualisation')
+                            cwd=os.path.abspath(os.path.join(os.path.dirname(__file__)), '..', 'visualization'))
 
         else:
             raise Exception(
