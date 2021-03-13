@@ -86,6 +86,8 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   # ! doc missing
   
   verify_filters <- function(input_values,all_values,type="values") {
+    input_values <- tolower(input_values)
+    all_values <- tolower(all_values)
     removed_values <- input_values[!input_values %in% all_values]
     n_removed <- length(removed_values)
     if(n_removed > 0) warning(paste("dropped",n_removed,type,":",paste(removed_values,collapse=", ")))
@@ -102,22 +104,22 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
     stop(paste("No valid genomes provided by user. Available genomes:",paste(all_genomes,collapse=", ")))
   }
   
-  all_chroms <- tolower(deepblue_chromosomes(genome = genome)$id)
+  all_chroms <- deepblue_chromosomes(genome = genome)
   if(!is.null(chroms)) {
-    chrs <- verify_filters(tolower(chroms),all_chroms,"chromosomes")
+    chrs <- verify_filters(chroms,all_chroms$id,"chromosomes")
   } else {
     chrs <- all_chroms
   }
   
   if(!is.null(filter_biosources)) {
-    all_biosources <- tolower(deepblue_list_biosources()$name)
-    filter_biosources <- verify_filters(tolower(filter_biosources),all_biosources,"biosources")
+    all_biosources <- deepblue_list_biosources()$name
+    filter_biosources <- verify_filters(filter_biosources,all_biosources,"biosources")
   }
   
-  tf_marks <- tolower(deepblue_list_epigenetic_marks(extra_metadata = list(category="Transcription Factor Binding Sites"))$name)
+  tf_marks <- deepblue_list_epigenetic_marks(extra_metadata = list(category="Transcription Factor Binding Sites"))$name
   
   if(!is.null(chip_marks)) {
-    chip_marks <- verify_filters(tolower(chip_marks),tf_marks,"epigenetic marks")
+    chip_marks <- verify_filters(chip_marks,tf_marks,"epigenetic marks")
   } else {
     chip_marks <- tf_marks
   }
@@ -194,29 +196,47 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   }
   output_file <- paste(sub("\\.csv$","",output_file),"csv",sep=".")
   
+  sizefile <- paste(genome,"chrom","sizes",sep=".")
+  size_output <- paste(outdir,sizefile,sep="/")
+  if(!file.exists(size_output)) {
+    write.table(all_chroms,file=size_output,col.names=F,row.names=F,quote=F,sep="\t")
+    message(paste(sizefile,"written to",normalizePath(outdir)))
+  }
+  
   if(is.null(csv_data)) {
+    
     stop("No data available for CSV")
+    
   } else {
+    
     # check whether CSV with given filename already exists - if yes, add new rows
     if(file.exists(output_file)) {
+      
       old_csv <- fread(file=output_file,header=TRUE,sep=";",colClasses=c("character"))
       old_filenames <- old_csv$filename
       csv_data.unique <- csv_data[!csv_data$filename %in% old_filenames]
+      
       if(nrow(csv_data.unique) > 0) {
+        
         csv_data <- rbind(old_csv,csv_data.unique,fill=TRUE)
-        # fwrite(csv_data.unique,file=output_file,na="",sep=";")
-        # fwrite(old_csv,file=paste(output_file,"old_csv"),na="",sep=";")
         fwrite(csv_data,file=output_file,na="",sep=";")
         message(paste(nrow(csv_data.unique),"lines added to",normalizePath(output_file)))
+        
       } else {
+        
         message(paste("No new data was added to",normalizePath(output_file)))
+        
       }
+      
     } else {
+      
       if(!dir.exists(outdir)) {
         dir.create(outdir,recursive = TRUE)
       }
+      
       fwrite(csv_data,file=output_file,na="",sep=";")
       message(paste(nrow(csv_data),"lines written to",normalizePath(output_file)))
+      
     }
   }
   
