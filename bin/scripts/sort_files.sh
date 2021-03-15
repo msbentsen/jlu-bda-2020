@@ -34,7 +34,7 @@ echo "$headers" > "$new_link"
 
 # used to ensure dnase-seq also land in the proper atac-seq folder
 while IFS=";" read -r experiment_id	genome	biosource	technique	\
-	epigenetic_mark	chromosome filename	data_type	remaining
+	epigenetic_mark	chromosome filename	data_type file_path	remaining
 do
 	if [ ! -e "$source_path/$filename" ]; then
 		continue
@@ -57,7 +57,7 @@ do
 	newfile="$new_path/$filename"
 	mv "$sourcefile" "$newfile"
 	echo "$experiment_id;$genome;$biosource;$technique;$epigenetic_mark;\
-$chromosome;$filename;$data_type;$remaining" >> "$new_link"
+$chromosome;$filename;$data_type;$newfile;$remaining" >> "$new_link"
 done < <(tail -n +2 "$csv_path")
 
 
