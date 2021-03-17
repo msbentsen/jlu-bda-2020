@@ -10,12 +10,11 @@ import os
 import scripts.repository
 
 
-def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
+def findarea(w, genom, biosource_ls, tf_ls, chr_list, redo_analysis):
     # path to pickledata
     picklepath = str(os.path.dirname(os.path.abspath(__file__)).replace("bin/scripts", "data/pickledata/"))
     exist = False
 
-    beddict = pickle.load(open(picklepath + genom + "/bed.pickle", "rb"))
     calculateddict = {}
 
     try:
@@ -26,71 +25,76 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
 
     # go through beddict for each biosource, then each tf, then each chromosom, then every binding
     # get Peak and Area from beddict and calculate the scores
-    for biosource in beddict:
+    for biosource in biosource_ls:
 
-        # test if biosource was requested by the user
-        if biosource in biosource_ls:
+        # load dictionarys contaning paths to chip and atac bigwig files
+        atacdict = pickle.load(open(picklepath + genom + "/atac-seq/" + biosource + ".pickle", "rb"))
+        chipdict = pickle.load(open(picklepath + genom + "/chip-seq/" + biosource + ".pickle", "rb"))
 
-            # load dictionarys contaning paths to chip and atac bigwig files
-            atacdict = pickle.load(open(picklepath + genom + "/atac-seq/" + biosource + ".pickle", "rb"))
-            chipdict = pickle.load(open(picklepath + genom + "/chip-seq/" + biosource + ".pickle", "rb"))
+        # generate key for biosource if it does not exist
+        if biosource not in calculateddict:
+            calculateddict[biosource] = {}
 
-            # generate key for biosource if it does not exist
-            if biosource not in calculateddict:
-                calculateddict[biosource] = {}
+        for tf in chipdict:
 
-            # open atac bigwig
-            atac = pyBigWig.open(atacdict)
+            # test if result for biosource-tf already exists
+            if result_csv is not None and len(result_csv.loc[(result_csv['biosource'] == biosource) & (
+                    result_csv['tf'] == tf)]) > 0 and not redo_analysis:
+                exist = True
 
-            for tf in beddict[biosource]:
+            else:
+                # test if tf was requested by the user
+                if tf in tf_ls:
 
-                # test if result for biosource-tf already exists
-                if result_csv is not None and len(result_csv.loc[(result_csv['biosource'] == biosource) & (
-                        result_csv['tf'] == tf)]) > 0 and not redo_analysis:
-                    exist = True
+                    # generate key for tf if it does not exist
+                    if tf not in calculateddict[biosource]:
+                        calculateddict[biosource][tf] = {}
 
-                else:
-                    # test if tf was requested by the user
-                    if tf in tf_ls:
+                    for file in chipdict[tf]:
 
-                        # generate key for tf if it does not exist
-                        if tf not in calculateddict[biosource]:
-                            calculateddict[biosource][tf] = {}
+                        try:
+                            # open chip bigwig for tf
+                            chip = pyBigWig.open(file)
 
-                        # open chip bigwig for tf
-                        chip = pyBigWig.open(chipdict[tf])
+                            for chromosom in chipdict[tf][file]:
 
-                        for chromosom in beddict[biosource][tf]:
+                                # test if chromososme was requested by user
+                                if chromosom in chr_list:
 
-                            # generate key for chromosome if it does not exist
-                            if chromosom not in calculateddict[biosource][tf]:
-                                calculateddict[biosource][tf][chromosom] = []
+                                    # generate key for chromosome if it does not exist
+                                    if chromosom not in calculateddict[biosource][tf]:
+                                        calculateddict[biosource][tf][chromosom] = []
 
-                            for binding in beddict[biosource][tf][chromosom]:
+                                    # open atac bigwig
+                                    atac = pyBigWig.open(atacdict[chromosom])
 
-                                start = binding[0]
-                                peak = binding[3]
+                                    for binding in chipdict[tf][file][chromosom]:
 
-                                # calculate the area to be analyzed
-                                peaklocation = start + peak
-                                peaklocationstart = peaklocation - w
-                                peaklocationend = peaklocation + w
-                                calculationls = []
+                                        start = binding[0]
+                                        peak = binding[3]
 
-                                # call scores between start and end from atac and chip using pyBigWig
-                                if chromosom in chip.chroms() and chromosom in atac.chroms():
-                                    calculationls.append(peaklocationstart)
-                                    calculationls.append(peaklocationend)
-                                    chip_score = chip.intervals(chromosom, peaklocationstart, peaklocationend)
-                                    atac_score = atac.intervals(chromosom, peaklocationstart, peaklocationend)
+                                        # calculate the area to be analyzed
+                                        peaklocation = start + peak
+                                        peaklocationstart = peaklocation - w
+                                        peaklocationend = peaklocation + w
+                                        calculationls = []
 
-                                    # calculate mean of chip and atac scores
-                                    for i in (chip_score, atac_score):
-                                        calculationls.append(calculate_mean(i, peaklocationstart, peaklocationend))
+                                        # call scores between start and end from atac and chip using pyBigWig
+                                        if chromosom in chip.chroms() and chromosom in atac.chroms():
+                                            calculationls.append(peaklocationstart)
+                                            calculationls.append(peaklocationend)
+                                            chip_score = chip.intervals(chromosom, peaklocationstart, peaklocationend)
+                                            atac_score = atac.intervals(chromosom, peaklocationstart, peaklocationend)
 
-                                    # add scores to dictionary
-                                    calculateddict[biosource][tf][chromosom].append(calculationls)
-                        print(tf, " done")
+                                            # calculate mean of chip and atac scores
+                                            if atac_score:
+                                                for i in (chip_score, atac_score):
+                                                    calculationls.append(calculate_mean(i, peaklocationstart, peaklocationend))
+                                            calculateddict[biosource][tf][chromosom].append(calculationls)
+                        except RuntimeError:
+                            print('Unable to open file '+file)
+
+                    print(tf, " done")
 
             # remove key if the value is empty
             if calculateddict[biosource]:
@@ -103,17 +107,18 @@ def findarea(w, genom, biosource_ls, tf_ls, redo_analysis):
 def calculate_mean(i,peaklocationstart, peaklocationend):
     length = 0
     mean = 0
-    for interval in i:
-        if interval[0]< peaklocationstart and interval[1] > peaklocationend:
-            interval_length = peaklocationend - peaklocationstart
-        else:
-            if interval[1] > peaklocationend:
-                interval_length = peaklocationend - interval[0]
-            elif interval[0]< peaklocationstart:
-                interval_length = interval[1] - peaklocationstart
+    if i:
+        for interval in i:
+            if interval[0]< peaklocationstart and interval[1] > peaklocationend:
+                interval_length = peaklocationend - peaklocationstart
             else:
-                interval_length = interval[1] - interval[0]
-        length += interval_length
-        mean += interval_length * interval[2]
-    mean = mean / length
+                if interval[1] > peaklocationend:
+                    interval_length = peaklocationend - interval[0]
+                elif interval[0]< peaklocationstart:
+                    interval_length = interval[1] - peaklocationstart
+                else:
+                    interval_length = interval[1] - interval[0]
+            length += interval_length
+            mean += interval_length * interval[2]
+        mean = mean / length
     return mean
