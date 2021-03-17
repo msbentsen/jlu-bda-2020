@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 # TODO: wenn file schon richtig, konvertierung skippen
 #===============================================================================
 #
@@ -43,7 +43,7 @@ validate_filetype () {
 	esac
 	if [ "$filetype" != "$file_extension" ]; then #filename gets new ending
 		new_filename=$(basename "$1")
-		new_filename="${new_filename%.*}.$filetype"
+		new_filename="${new_filename}.$filetype"
 		return 1
 	else
 		new_filename=$1 # filename stays the same
@@ -65,11 +65,16 @@ convert_file() {
 	local file_name=${2%.*}
 	if [ "$3" == "bigwig" ] || [ "$3" == "bw" ]; then
 		if  [ "$file_extension" == "bed" ]; then
-			cut --fields 1-3,7 "$1" > "$out_path/$file_name.bedgraph"
+			cut --fields 1-3,8 "$1" > "$out_path/$file_name.bedgraph"
 			file_extension="bedgraph"
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
 			newfile="$out_path/$file_name.$file_extension"
+			echo $newfile
+			if [ $(head -1 $newfile | tr '\t' '\n' | wc -l) == 6 ]; then
+				cut --fields 1-3,6 "$newfile" > "$6/tempfile"
+				mv "$6/tempfile" "$newfile"
+			fi
 			tail -n +2 "$newfile" > "$6/tempfile"
 			mv "$6/tempfile" "$newfile"
 			bedGraphToBigWig "$newfile" \
@@ -89,6 +94,7 @@ convert_file() {
 #===============================================================================
 merge_chunks() {
 	folder=$1
+	outfiles=()
 	for file in $(ls -v "$folder"); do
 		file=$folder/$file
 		temp=$(basename "$folder/$file")
@@ -99,8 +105,14 @@ merge_chunks() {
 				# TODO: echo "outfile: $outfile" Logging
 				head -n1 "$file" > "$outfile"
 			fi
+			outfiles+=($outfile)
 			awk 'FNR>1' "$file" >> "$outfile"
 		fi
+	done
+	merged_files=($(echo "${outfiles[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+	for file in ${merged_files[*]}; do
+		uniq "$file" > "tempfile"
+		mv "tempfile" "$file"
 	done
 }
 
@@ -115,10 +127,10 @@ touch "$new_link"
 export new_filename=""
 
 # Strip .txt ending of downloaded files
-#rename s/'.txt'// $source_path/*.txt # TODO: error when doublequoting source_path/*
+rename s/'.txt'// $source_path/*.txt # TODO: error when doublequoting source_path/*
 
 #Merge atac-seq chunks
-#merge_chunks "$source_path"
+merge_chunks "$source_path"
 
 headers=$(head -n 1 "$source_path/$csv_name")
 echo "${headers:0:87}file_path;${headers:87}" > "$new_link"
