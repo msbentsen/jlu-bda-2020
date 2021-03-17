@@ -9,7 +9,7 @@ parser <- ArgumentParser()
 
 parser$add_argument("-i", "--input", type="character", default="linking_table.csv",
                     help="Input CSV file name with extension [default: \"%(default)s\"]")
-parser$add_argument("-o", "--output", type="character", default="csv_exported",
+parser$add_argument("-o", "--output", type="character", default=".",
                     help="Output directory name [default: \"%(default)s\"]")
 parser$add_argument("-c", "--chunks", type="integer", default=10000000L,
                     help="Chunk size for ATAC/DNAse data [default: %(default)s]")
@@ -89,7 +89,7 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
         if(req_status == "done") {
           
           # NEW: download data as character vector
-          regions <- try(deepblue_download_request_data(request_id))
+          regions <- try(deepblue_download_request_data(request_id,do_not_cache=TRUE))
           
           if(class(regions) != "GRanges") {
             
@@ -169,7 +169,7 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
           
           if(req_status == "done") {
             
-            regions <- try(deepblue_download_request_data(request_id))
+            regions <- try(deepblue_download_request_data(request_id,do_not_cache=TRUE))
             
             if(class(regions) != "GRanges") {
               
@@ -246,18 +246,17 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
       stop("No files were downloaded due to previous errors.")
     } else {
       message(paste(n_good,"file(s) downloaded to",normalizePath(out_dir)))
-      return(0)
     }
     
   } else {
     
-    warning("No new files to download.")
-    return(1)
+    message("No new files to download.")
+    # exit with returncode 2 for generate_data.py error handling
+    q(save="no",status=2)
     
   }
   
 }
 
-status <- export_from_csv(args$input,args$output,as.integer(args$chunks))
-return(status)
+export_from_csv(args$input,args$output,as.integer(args$chunks))
 
