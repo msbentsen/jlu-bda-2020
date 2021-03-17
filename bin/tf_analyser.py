@@ -39,18 +39,15 @@ def main():
     user_key = "anonymous_key"
 
     try:
-        genome_choices = [genome[1] for genome in server.list_genomes(user_key)[1]]
+        genome_choices = [genome[1].lower() for genome in server.list_genomes(user_key)[1]]
         genome_choices.sort()
 
-        biosource_choices = [biosource[1] for biosource in server.list_biosources(None, user_key)[1]]
+        biosource_choices = [biosource[1].lower() for biosource in server.list_biosources(None, user_key)[1]]
         biosource_choices.append('all')
-        biosource_choices.append('downloaded')
         biosource_choices.sort()
 
-        tf_choices = [tf[1] for tf in server.list_epigenetic_marks(None, user_key)[1]]
+        tf_choices = [tf[1].lower() for tf in server.list_epigenetic_marks({"category": "Transcription Factor Binding Sites"}, user_key)[1]]
         tf_choices.append('all')
-        tf_choices.append('downloaded')
-        tf_choices = [x for x in tf_choices if x not in ["DnaseI", "DNA Accessibility"]]
         tf_choices.sort()
 
         chromosomes = {}
@@ -72,10 +69,10 @@ def main():
     # set variable linking_table_exist to True
     try:
         lt = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'temp', 'linking_table.csv'),
-                         sep=';', usecols=['genome', 'epigenetic_mark', 'biosource_name'])
+                         sep=';', usecols=['genome', 'epigenetic_mark', 'biosource'])
         lt_genomes = set(lt.values[:, 0])
-        lt_tfs = [x.upper() for x in set(lt.values[:, 1][lt.values[:, 1] != ('dnasei' or 'dna accessibility')])]
-        lt_biosources = set(x for x in lt.values[:, 2] if x in biosource_choices)
+        lt_tfs = [x for x in set(lt.values[:, 2][lt.values[:, 2] != ('dnasei' or 'dna accessibility')])]
+        lt_biosources = set(x for x in lt.values[:, 1] if x in biosource_choices)
         linking_table_exist = True
 
     # if linking_table does not exist:
@@ -100,12 +97,12 @@ def main():
                             ["None"] if lt_genomes is None else lt_genomes),
                         metavar='GENOME')
     parser.add_argument('-b', '--biosource', default=['all'], type=str, nargs='+', choices=biosource_choices,
-                        help='Allowed values are \'all\', \'downloaded\' or biosources from\n' + biosourcelink + '\n '
+                        help='Allowed values are \'all\' or biosources from\n' + biosourcelink + '\n '
                                                                                                                  'You already downloaded the following biosources:\n' + ', '.join(
                             ["None"] if lt_biosources is None else lt_biosources),
                         metavar='BIOSOURCE')
     parser.add_argument('-t', '--tf', default=['all'], type=str, nargs='+', choices=tf_choices,
-                        help='Allowed values are \'all\', \'downloaded\' or epigenetic marks from\n' + tflink + '\n '
+                        help='Allowed values are \'all\' or epigenetic marks from\n' + tflink + '\n '
                                                                                                                 'You already downloaded the following TFs:\n' + ', '.join(
                             ["None"] if lt_tfs is None else lt_tfs),
                         metavar='TF')
@@ -138,36 +135,19 @@ def main():
         if 'all' in args.biosource:
             args.biosource = biosource_choices
             args.biosource.remove('all')
-            args.biosource.remove('downloaded')
 
         if 'all' in args.tf:
-            args.tf = [x for x in tf_choices if x not in ["all", "downloaded"]]
-
-        # test if biosource or tf equals 'all'
-        # if yes, set the value to all possible values from deepbluer
-        if 'downloaded' in args.biosource:
-            if linking_table_exist:
-                args.biosource = lt_biosources
-            else:
-                raise ValueError("There is currently no data available. You need to download the data first.")
-
-        if 'downloaded' in args.tf:
-            if linking_table_exist:
-                args.tf = lt_tfs
-            else:
-                raise ValueError("There is currently no data available. You need to download the data first.")
-
-        # test if user parameters are already downloaded
-        # save parameter that need to be downloaded in the dictionary download_dict
+            args.tf = [x for x in tf_choices if x != "all"]
 
         # download data from download_dict
         requested_data = generate_data.DataConfig([args.genome], args.chromosome, args.biosource, args.tf, args.output_path,
                                                   'linking_table.csv', os.path.abspath
                                                   (os.path.join(os.path.dirname(__file__), '../data/chromsizes/')),'bigwig')
+        print(requested_data)
         requested_data.pull_data()
 
         # run the script score.py and store the calculated scores in the dictionary 'scores'
-        scores, exist = scripts.score.findarea(args.width, args.genome.lower(), [x.lower() for x in args.biosource], [x.lower() for x in args.tf], args.redo_analysis)
+        scores, exist = scripts.score.findarea(args.width, args.genome.lower(), [x.lower() for x in args.biosource], [x.lower() for x in args.tf], args.chromosome, args.redo_analysis)
 
         # test if 'scores' is an empty dictionary
         # if not, generate plots with the script analyse_main.py
