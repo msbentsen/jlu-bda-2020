@@ -29,17 +29,15 @@ def parse(data_path):
             os.mkdir(os.path.join(data_path, 'pickledata'))
         if not os.path.exists(os.path.join(data_path, 'pickledata', genome)):
             os.mkdir(os.path.join(data_path, 'pickledata', genome))
+        if not os.path.exists(os.path.join(data_path, 'pickledata', genome, 'chip-seq')):
+            os.mkdir(os.path.join(data_path, 'pickledata', genome, 'chip-seq'))
+        if not os.path.exists(os.path.join(data_path, 'pickledata', genome, 'atac-seq')):
+            os.mkdir(os.path.join(data_path, 'pickledata', genome, 'atac-seq'))
 
         # list all biosource folders for one genome
         biosources = [x for x in os.listdir(os.path.join(data_path, genome)) if x in lt_biosources]
 
         for biosource in biosources:
-
-            # create folder structure for pickle files if it does not exist
-            if not os.path.exists(os.path.join(data_path, 'pickledata', genome, 'chip-seq')):
-                os.mkdir(os.path.join(data_path, 'pickledata', genome, 'chip-seq'))
-            if not os.path.exists(os.path.join(data_path, 'pickledata', genome, 'atac-seq')):
-                os.mkdir(os.path.join(data_path, 'pickledata', genome, 'atac-seq'))
 
             # dictionary for bed data of one biosource
             bs_bed_dict = {}
