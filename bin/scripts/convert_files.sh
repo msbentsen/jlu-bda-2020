@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 # TODO: wenn file schon richtig, konvertierung skippen
 #===============================================================================
 #
@@ -70,7 +70,6 @@ convert_file() {
 		fi
 		if [ "$file_extension" == "bedgraph" ]; then
 			newfile="$out_path/$file_name.$file_extension"
-			echo $newfile
 			if [ $(head -1 $newfile | tr '\t' '\n' | wc -l) == 6 ]; then
 				cut --fields 1-3,6 "$newfile" > "$6/tempfile"
 				mv "$6/tempfile" "$newfile"
