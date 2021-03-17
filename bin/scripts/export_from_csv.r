@@ -234,6 +234,7 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
     
     failed_files <- failed_rows[!is.na(failed_rows$filename)]$filename
     n_failed <- length(failed_files)
+    n_good <- nrow(queued_files)-n_failed
     
     if(n_failed > 0) {
       
@@ -241,14 +242,22 @@ export_from_csv <- function(csv_file,out_dir,chunk_size) {
       
     }
     
-    message(paste(nrow(queued_files)-n_failed,"file(s) downloaded to",normalizePath(out_dir)))
+    if(n_good == 0) {
+      stop("No files were downloaded due to previous errors.")
+    } else {
+      message(paste(n_good,"file(s) downloaded to",normalizePath(out_dir)))
+      return(0)
+    }
     
   } else {
     
-    stop("No new files to download.")
+    warning("No new files to download.")
+    return(1)
     
   }
   
 }
 
-export_from_csv(args$input,args$output,as.integer(args$chunks))
+status <- export_from_csv(args$input,args$output,as.integer(args$chunks))
+return(status)
+
