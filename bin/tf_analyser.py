@@ -162,7 +162,7 @@ def main():
             subprocess.Popen(['python',
                               os.path.join(os.path.dirname(__file__), 'scripts', 'visualization_app_api_start.py')])
             subprocess.call(['ng', 'serve', '--live-reload'],
-                            cwd=os.path.abspath(os.path.join(os.path.dirname(__file__)), '..', 'visualization'))
+                            cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'visualization')))
 
         else:
             raise Exception(
