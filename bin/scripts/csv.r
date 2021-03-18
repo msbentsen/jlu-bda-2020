@@ -85,13 +85,15 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   
   # ! doc missing
   
-  verify_filters <- function(input_values,all_values,type="values") {
+  verify_filters <- function(input_values, all_values, type="values") {
     input_values <- tolower(input_values)
     all_values <- tolower(all_values)
     removed_values <- input_values[!input_values %in% all_values]
     n_removed <- length(removed_values)
-    if(n_removed > 0) warning(paste("dropped",n_removed,type,":",paste(removed_values,collapse=", ")))
+
+    if(n_removed > 0) warning(paste("dropped", n_removed, type, ":", paste(removed_values, collapse=", ")))
     filter_values <- input_values[!input_values %in% removed_values]
+    
     if(length(filter_values) == 0) {
       stop(paste("No",type,"given by user could be found in Deepblue database"))
     } else {
@@ -101,12 +103,13 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   
   all_genomes <- deepblue_list_genomes()$name
   if(!genome %in% all_genomes) {
-    stop(paste("No valid genomes provided by user. Available genomes:",paste(all_genomes,collapse=", ")))
+    stop(paste("No valid genomes provided by user. Available genomes:", paste(all_genomes, collapse=", ")))
   }
   
   all_chroms <- deepblue_chromosomes(genome = genome)
+  chroms <- strsplit(chroms, '\\s+')[[1]] #split input string to list
   if(!is.null(chroms)) {
-    chrs <- verify_filters(chroms,all_chroms$id,"chromosomes")
+    chrs <- verify_filters(chroms, all_chroms$id, "chromosomes")
   } else {
     chrs <- all_chroms
   }
@@ -117,7 +120,7 @@ create_linking_table <- function(genome,chroms,filter_biosources,chip_type,atac_
   }
   
   tf_marks <- deepblue_list_epigenetic_marks(extra_metadata = list(category="Transcription Factor Binding Sites"))$name
-  
+  chip_marks <- strsplit(chip_marks, '\\s+')[[1]] #split input string to list
   if(!is.null(chip_marks)) {
     chip_marks <- verify_filters(chip_marks,tf_marks,"epigenetic marks")
   } else {

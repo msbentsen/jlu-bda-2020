@@ -139,11 +139,14 @@ def main():
         if 'all' in args.tf:
             args.tf = [x for x in tf_choices if x != "all"]
 
+        if 'all' in args.chromosome:
+            args.chromosome = chromosomes[args.genome]
+
         # download data from download_dict
         requested_data = generate_data.DataConfig([args.genome], args.chromosome, args.biosource, args.tf, args.output_path,
                                                   'linking_table.csv', os.path.abspath
                                                   (os.path.join(os.path.dirname(__file__), '../data/chromsizes/')),'bigwig')
-        print(requested_data)
+        print(requested_data.__dict__)
         requested_data.pull_data()
 
         # run the script score.py and store the calculated scores in the dictionary 'scores'
