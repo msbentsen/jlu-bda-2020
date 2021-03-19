@@ -94,7 +94,9 @@ class DataConfig:
         csv = os.path.join(self.outpath, "data", "download", self.csvname)
         outdir = os.path.join(self.outpath, "data", "download")
 
-        rc = subprocess.call([tool, "-i", csv, "-o", outdir])
+        cmd = [tool, "-i", csv, "-o", outdir]
+        logging.info("Running: " + " ".join(cmd))
+        rc = subprocess.call(cmd)
         if rc != 0:
             logging.error("export_from_csv.r could not download data")
             raise Exception("export_from_csv.r could not download data")
@@ -111,8 +113,9 @@ class DataConfig:
         indir = os.path.join(self.outpath, "data", "download")
         outdir = os.path.join(self.outpath, "data", "temp")
 
-        rc = subprocess.call(
-            [tool, "bigwig", indir, outdir, self.chromsizes, self.csvname])
+        cmd = ["bash", tool, "bigwig", indir, outdir, self.chromsizes, self.csvname]
+        logging.info("Running: " + " ".join(cmd))
+        rc = subprocess.call(cmd)
         if rc != 0:
             logging.error("convert_files.sh could not convert files")
             raise Exception("convert_files.sh could not convert files")
